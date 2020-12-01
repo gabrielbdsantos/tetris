@@ -135,6 +135,7 @@ class Block(Base):
         self.patches = []
 
         self.grading = [1, 1, 1]
+        self.grading_type = 'simple'
         self.ncells = [1, 1, 1]
         self.cellZone = ""
 
@@ -178,7 +179,7 @@ class Block(Base):
             f"hex ({' '.join([str(v.id) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
             f" {list2foam(self.ncells)}"
-            f" simpleGrading {list2foam(self.grading)}"
+            f" {self.grading_type}Grading {list2foam(self.grading)}"
             f"{comment(self.description)}"
         )
 
