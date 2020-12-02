@@ -52,10 +52,6 @@ This project is licensed under the MIT License.
 
 Copyright (c) 2020 Gabriel B. Santos
 
-You should have received a copy
-of the MIT License along with this source code. If not, see
-<https://mit-license.org>.
-
 [blockmesh]: https://cfd.direct/openfoam/user-guide/blockMesh/
 [tableedges]: https://cfd.direct/openfoam/user-guide/v8-blockMesh/#x26-1880112
 [m4]: https://www.gnu.org/software/m4/m4.html
