@@ -37,6 +37,6 @@ def list2foam(lst):
         elif isinstance(i, (tuple, list,)):
             s += f" {list2foam(i)}"
         elif isinstance(i, Vertex):
-            s = f"{i.write()}"
+            s += f" {i.write()}"
 
     return f"({s})"
