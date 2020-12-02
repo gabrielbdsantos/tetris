@@ -120,10 +120,11 @@ class Block(Base):
         'back': (2, 3, 7, 6)
     }
 
-    # List of edges on each direction
+    # List of edges on each direction. It follows the notation on
+    # https://cfd.direct/openfoam/user-guide/blockMesh/#x26-1850174
     EDGES_ON_AXIS = (
-        ([0, 1], [2, 3], [4, 5], [6, 7]),  # x1 = 0
-        ([0, 3], [1, 2], [4, 7], [5, 6]),  # x2 = 1
+        ([0, 1], [2, 3], [6, 7], [4, 5]),  # x1 = 0
+        ([0, 3], [1, 2], [5, 6], [4, 7]),  # x2 = 1
         ([0, 4], [1, 5], [2, 6], [3, 7]),  # x3 = 2
     )
 
