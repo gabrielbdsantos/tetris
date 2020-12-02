@@ -6,7 +6,7 @@ import numpy as np
 
 def normL2(vector):
     """Return the norm L2 of a given vector."""
-    return np.linalg(vector)
+    return np.linalg.norm(vector)
 
 
 def unit_vector(vector):
@@ -20,14 +20,30 @@ def normal_unit_vector(p1, p2, inverse=False):
     return unit_vector(sig * np.array([-(p2[1] - p1[1]), (p2[0] - p1[0])]))
 
 
-def rotation3D(p1, p2, yaw=0, pitch=0, roll=0, rotate_about=None,
+def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
                in_rad=False):
     """Perform general rotation in three-dimensional euclidean space."""
-    c, s = np.cos, np.sin
-    p1, p2 = np.array(p1), np.array(p2)
+    from .mesh import Vertex
 
-    if rotate_about is None:
-        rotate_about = p1
+    c, s = np.cos, np.sin
+
+    if isinstance(vertex, Vertex):
+        point = vertex.coords
+    elif isinstance(vertex, (list, tuple)):
+        point = np.array(vertex + [0 for _ in range(3 - len(vertex))])
+    elif isinstance(vertex, np.ndarray):
+        point = np.append(vertex, [0 for _ in range(3 - vertex.shape[0])])
+
+    if isinstance(rotate_about, Vertex):
+        rotate_about = rotate_about.coords
+    elif isinstance(rotate_about, (list, tuple)):
+        rotate_about = np.array(
+            rotate_about + [0 for _ in range(3 - len(rotate_about))]
+        )
+    elif isinstance(rotate_about, np.ndarray):
+        rotate_about = np.append(
+            rotate_about, [0 for _ in range(3 - rotate_about.shape[0])]
+        )
 
     if not in_rad:
         yaw = np.deg2rad(yaw)
@@ -46,10 +62,9 @@ def rotation3D(p1, p2, yaw=0, pitch=0, roll=0, rotate_about=None,
 
     rotation_matrix = np.matmul(matrix_yaw, matrix_pitch, matrix_roll)
 
-    _p1 = (rotation_matrix * (p1 - rotate_about)).sum(1)
-    _p2 = (rotation_matrix * (p2 - rotate_about)).sum(1)
+    _point = (rotation_matrix * (point - rotate_about)).sum(1)
 
-    return (_p1, _p2) + rotate_about
+    return _point + rotate_about
 
 
 def ncells_simple(first_cell_size, edge_length):
