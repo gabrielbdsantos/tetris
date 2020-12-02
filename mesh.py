@@ -101,6 +101,23 @@ class Vertex(Base):
         """Overload the reflected division operator."""
         return self.__truediv__(other)
 
+    # Augmented arithmetic assignments
+    def __iadd__(self, other):
+        """Overload the augmented addition assignment."""
+        return self.__add__(other)
+
+    def __isub__(self, other):
+        """Overload the augmented subtraction assignment."""
+        return self.__sub__(other)
+
+    def __imul__(self, other):
+        """Overload the augmented multiplication assignment."""
+        return self.__mul__(other)
+
+    def __itruediv__(self, other):
+        """Overload the augmented division assignment."""
+        return self.__truediv__(other)
+
 
 class Edge(Base):
     """Define an edge in a three-dimensional euclidian space."""
