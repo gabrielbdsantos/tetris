@@ -30,8 +30,12 @@ class Vertex(Base):
         v = self.coords
         return (f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){comment(self.id)}")
 
+    def __neg__(self):
+        """Overload the negation operator."""
+        return Vertex(*(-self.coords))
+
     def __add__(self, other):
-        """Overload addition."""
+        """Overload the addition operator."""
         if isinstance(other, Vertex):
             return Vertex(*[x for x in (self.coords + other.coords)])
 
@@ -50,7 +54,7 @@ class Vertex(Base):
                               " Numpy array of same shape.")
 
     def __sub__(self, other):
-        """Overload subtraction."""
+        """Overload the subtraction operator."""
         if isinstance(other, Vertex):
             return Vertex(*[x for x in (self.coords - other.coords)])
 
@@ -65,7 +69,7 @@ class Vertex(Base):
                               " or Numpy array of same shape.")
 
     def __mul__(self, other):
-        """Overload multiplication."""
+        """Overload the multiplication operator."""
         if isinstance(other, (int, float,)):
             return Vertex(*[x for x in (other * self.coords)])
 
@@ -79,6 +83,23 @@ class Vertex(Base):
             return Vertex(*[x for x in (self.coords / other)])
 
         raise ArithmeticError("Vertex can only be divided by a number.")
+
+    # Reflected operators
+    def __radd__(self, other):
+        """Overload the reflected addition operator."""
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        """Overload the reflected subtraction operator."""
+        return self.__sub__(other)
+
+    def __rmul__(self, other):
+        """Overload the reflected multiplication operator."""
+        return self.__mul__(other)
+
+    def __rtruediv__(self, other):
+        """Overload the reflected division operator."""
+        return self.__truediv__(other)
 
 
 class Edge(Base):
