@@ -70,3 +70,24 @@ def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
 def ncells_simple(first_cell_size, edge_length):
     """Return the cell count based on: first cell size and edge length."""
     return int(np.ceil(edge_length / first_cell_size))
+
+
+def distance(point1, point2):
+    """Calculate the distance between two points."""
+    from .mesh import Vertex
+
+    if isinstance(point1, Vertex):
+        p1 = point1.coords
+    elif isinstance(point1, (list, tuple)):
+        p1 = np.array(point1 + [0 for _ in range(3 - len(point1))])
+    elif isinstance(point1, np.ndarray):
+        p1 = np.append(point1, [0 for _ in range(3 - point1.shape[0])])
+
+    if isinstance(point2, Vertex):
+        p2 = point2.coords
+    elif isinstance(point2, (list, tuple)):
+        p2 = np.array(point2 + [0 for _ in range(3 - len(point2))])
+    elif isinstance(point2, np.ndarray):
+        p2 = np.append(point2, [0 for _ in range(3 - point2.shape[0])])
+
+    return normL2(np.abs(p1 - p2))
