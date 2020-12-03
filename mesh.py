@@ -21,8 +21,17 @@ class Base(object):
 class Vertex(Base):
     """Define a vertex in a three-dimensional euclidean space."""
 
-    def __init__(self, x1, x2, x3):
-        self.coords = np.array([x1, x2, x3], dtype='float64')
+    def __init__(self, *args):
+        try:
+            _args = np.array(args, dtype='float64')
+            _args = np.reshape(_args, (_args.shape[-1],))
+            self.coords = np.pad(_args, [0, int(3 - _args.shape[0])],
+                                 'constant', constant_values=(0))
+        except (TypeError, ValueError):
+            raise ValueError("Invalid argument. Please, see the docstrings"
+                             " for more details on how to declare the"
+                             " coordinates.")
+
         self.id = None
 
     def write(self):
