@@ -9,6 +9,23 @@ def normL2(vector):
     return np.linalg.norm(vector)
 
 
+def normL2x1(tensor):
+    """Retrun the norm L2x1 of a given tensor."""
+    # Remember that vectors may be expressed as a first-order tensor. Thus, we
+    # first check whether we are working with vectors.
+    if tensor.ndim == 1:
+        element = np.reshape(tensor, (1, tensor.shape[0],))
+
+    # TODO
+    #   Perhaps, we should also check for other dimensions. But for now, we
+    #   assume that the user are working with at most second-order tensors.
+    else:
+        element = tensor
+
+    on_axis = element.ndim - 1
+    return np.linalg.norm(element, axis=on_axis)
+
+
 def unit_vector(vector):
     """Return an unit vector on the same direction of the given vector."""
     return vector / normL2(vector)
@@ -79,15 +96,20 @@ def distance(point1, point2):
     if isinstance(point1, Vertex):
         p1 = point1.coords
     elif isinstance(point1, (list, tuple)):
-        p1 = np.array(point1 + [0 for _ in range(3 - len(point1))])
+        p1 = np.array(point1)
     elif isinstance(point1, np.ndarray):
-        p1 = np.append(point1, [0 for _ in range(3 - point1.shape[0])])
+        p1 = point1
 
     if isinstance(point2, Vertex):
         p2 = point2.coords
     elif isinstance(point2, (list, tuple)):
-        p2 = np.array(point2 + [0 for _ in range(3 - len(point2))])
+        p2 = np.array(point2)
     elif isinstance(point2, np.ndarray):
-        p2 = np.append(point2, [0 for _ in range(3 - point2.shape[0])])
+        p2 = point2
 
-    return normL2(np.abs(p1 - p2))
+    return normL2x1(p1 - p2).sum()
+
+
+def is_collinear(v0, v1, v2):
+    """Determine whether three points are collinear."""
+    return np.cross(v0 - v1, v0 - v2).sum() == 0

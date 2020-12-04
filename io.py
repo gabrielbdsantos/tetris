@@ -40,3 +40,34 @@ def list2foam(lst):
             s += f" {i.write()}"
 
     return f"({s})"
+
+
+def tetris2foam(element):
+    """Translate Tetris objects into OpenFOAM style."""
+    pass
+
+
+def str2foam(value):
+    """Translate Python strings to OpenFOAM style."""
+    return f"{value}"
+
+
+def int2foam(value, show_sign=False):
+    """Translate Python integer to OpenFOAM style."""
+    sign = '+' if show_sign else ''
+    return f"{value:{sign}}"
+
+
+def float2foam(value, show_sign=False, precision='.6', type='f'):
+    """Translate Python float to OpenFOAM style."""
+    sign = '+' if show_sign else ''
+    return f"{value:{sign}{precision}{type}}"
+
+
+def lst2foam(value, sep=' '):
+    """Translate Python list to OpenFOAM style."""
+    r = sep.join([tetris2foam(v) for v in value])
+    return f"({r})"
+
+
+tuple2foam = list2foam
