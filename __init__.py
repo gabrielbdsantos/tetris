@@ -1,7 +1,6 @@
 # coding: utf-8
-"""Python wrapper for OpenFOAM's blockMesh."""
+"""Python module to create structured meshes with OpenFOAM's blockMesh."""
 
-from .mesh import Vertex, Edge, Patch, Block, Mesh
-
+from .mesh import Block, Edge, Mesh, Patch, Vertex
 
 __all__ = [Vertex, Edge, Patch, Block, Mesh]
