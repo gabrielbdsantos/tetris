@@ -1,5 +1,5 @@
 # coding: utf-8
-"""Provide mathematical utilities for Tetris."""
+"""Mathematical utilities for Tetris."""
 
 import numpy as np
 
@@ -40,7 +40,7 @@ def normal_unit_vector(p1, p2, inverse=False):
 def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
                in_rad=False):
     """Perform general rotation in three-dimensional euclidean space."""
-    from .mesh import Vertex
+    from ..mesh.elements import Vertex
 
     c, s = np.cos, np.sin
 
@@ -91,7 +91,7 @@ def ncells_simple(first_cell_size, edge_length):
 
 def distance(point1, point2):
     """Calculate the distance between two points."""
-    from .mesh import Vertex
+    from ..mesh.elements import Vertex
 
     if isinstance(point1, Vertex):
         p1 = point1.coords

@@ -1,9 +1,12 @@
 # coding: utf-8
-"""Provide IO functionalities for Tetris."""
+"""Input--Output functionalities."""
 
 import os.path
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
+BLOCKMESHDICT_TEMPLATE = os.path.abspath(
+    os.path.join(PATH_HERE, r'../../../assets/blockMeshDict')
+)
 
 
 def comment(string):
@@ -22,7 +25,7 @@ def printif(string, pre_sep=' ', post_sep=' '):
 
 def list2foam(lst):
     """Translate nested Python lists into OpenFOAM lists."""
-    from .mesh import Vertex
+    from ..mesh.elements import Vertex
 
     if isinstance(lst[0], (str, float, int,)):
         s = f"{str(lst[0])}"
@@ -70,4 +73,5 @@ def lst2foam(value, sep=' '):
     return f"({r})"
 
 
+# We can use the same function for lists and tuples.
 tuple2foam = list2foam

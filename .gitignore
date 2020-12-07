@@ -1,9 +1,9 @@
-# vim local configs
+# (Neo)Vim local configs
 .nvim/
 .vim/
 
-# local example
-example/
+# Examples
+examples/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

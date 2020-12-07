@@ -1,13 +1,10 @@
 # coding: utf-8
-"""Provide Python-equivalent blockMesh elements."""
-
-import os
+"""Python-equivalent blockMesh elements."""
 
 import numpy as np
-from jinja2 import Template
 
-from .io import PATH_HERE, comment, list2foam
-from .math import distance, is_collinear
+from ..utils.math import distance, is_collinear
+from .io import comment, list2foam
 
 
 class Element(object):
@@ -17,7 +14,7 @@ class Element(object):
         pass
 
     def write(self):
-        """Output element in OpenFOAM style."""
+        """Output the current element in OpenFOAM style."""
         return None
 
 
@@ -31,78 +28,101 @@ class Vertex(Element):
             self.coords = np.pad(_args, [0, int(3 - _args.shape[0])],
                                  'constant', constant_values=(0))
         except (TypeError, ValueError):
-            raise ValueError("Invalid argument. Please, see the docstrings"
-                             " for more details on how to declare the"
-                             " coordinates.")
+            raise ValueError("Invalid argument. Please, see the docstrings "
+                             "for details on how to declare the coordinates.")
 
+        # An ID is assigned when registering the Vertex instance to the mesh.
+        # It is also an easier way to monitor whether a Vertex has been already
+        # registered to the mesh.
         self.id = None
 
     def write(self):
-        """Write the coordinates in OpenFOAM style."""
+        """Write the coordinates in OpenFOAM style.
+
+        Returns
+        -------
+        str
+            A rendered representation of the current Vertex instance in
+            OpenFOAM style.
+        """
         v = self.coords
         return (f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){comment(self.id)}")
 
-    # Let us overload some operators so we may use the Vertex class in a more
-    # pythonic way
+    # Let's overload some operators so we may use the Vertex class in a more
+    # pythonic way.
     def __neg__(self):
         """Overload the negation operator."""
-        return Vertex(*(-self.coords))
+        return Vertex(-self.coords)
 
     def __add__(self, other):
         """Overload the addition operator."""
+        # When adding to Vertex instances, we just need to add each one's
+        # coordinates since Vertex.coords is stored as numpy.ndarray.
         if isinstance(other, Vertex):
-            return Vertex(*[x for x in (self.coords + other.coords)])
+            return Vertex(self.coords + other.coords)
 
+        # If `other` is an instance of numpy.ndarray, we can simply add
+        # `self.coords` to it. It could be wise to check whether `other` and
+        # `self.coords` have the same shape. However, as we enforce a (3,)
+        # shape for Vertex coordinates, anything different than that will raise
+        # an error. Just for the record, we are fine with that.
         if isinstance(other, np.ndarray):
-            if other.shape == self.coords.shape:
-                return Vertex(*[x for x in (self.coords + other)])
+            return Vertex(self.coords + other)
 
+        # If 'other' is a list or tuple, we first convert it to numpy.ndarray
+        # and then add it to 'self.coords'. Again, we perform no checks to
+        # verify the list or tuple content and its dimensions.
         if isinstance(other, (list, tuple,)):
-            if len(other) == 3:
-                return Vertex(*[x for x in (self.coords + np.array(other))])
+            return Vertex(self.coords + np.array(other, dtype='float64'))
 
+        # If 'other' is simply an integer or float, we add it to 'self.coord'.
         if isinstance(other, (int, float)):
-            return Vertex(*[x for x in (self.coords + other)])
+            return Vertex(self.coords + other)
 
-        raise ArithmeticError("Vertex can only be added to other Vertex or"
+        # Case none of the above clauses are satisfied, then we have an error.
+        # Let's warn the user about that.
+        raise ArithmeticError("Vertex can only be added to another Vertex or"
                               " Numpy array of same shape.")
 
     def __sub__(self, other):
         """Overload the subtraction operator."""
+        # Any decisions here are just a copy-paste version of the addition
+        # operator. Thus, please refer to `__add__` for more details.
         if isinstance(other, Vertex):
-            return Vertex(*[x for x in (self.coords - other.coords)])
+            return Vertex(self.coords - other.coords)
 
         if isinstance(other, np.ndarray):
-            if other.shape == self.coords.shape:
-                return Vertex(*[x for x in (self.coords - other)])
+            return Vertex(self.coords - other)
+
+        if isinstance(other, (list, tuple,)):
+            return Vertex(self.coords + np.array(other, dtype='float64'))
 
         if isinstance(other, (int, float)):
-            return Vertex(*[x for x in (self.coords - other)])
+            return Vertex(self.coords - other)
 
-        raise ArithmeticError("Unsupported operation. Vertex can only be"
-                              " subtracted from other Vertex or Numpy array of"
-                              " same shape.")
+        raise ArithmeticError("Vertex can only be subtracted from another"
+                              " Vertex or Numpy array of same shape.")
 
     def __mul__(self, other):
         """Overload the multiplication operator."""
         if isinstance(other, (int, float,)):
-            return Vertex(*[x for x in (other * self.coords)])
+            return Vertex(other * self.coords)
 
-        raise ArithmeticError("Unsupported operation. Vertex can only be"
-                              " multiplied by a number.")
+        raise ArithmeticError("Vertex can only be multiplied by an integer or"
+                              " float.")
 
     def __truediv__(self, other):
         """Overload true division."""
         # Don't need to check whether `other` is zero. In such case, Python
         # itself will raise a ZeroDivisionError.
         if isinstance(other, (int, float,)):
-            return Vertex(*[x for x in (self.coords / other)])
+            return Vertex(self.coords / other)
 
-        raise ArithmeticError("Unsupported operation. Vertex can only be"
-                              " divided by a number.")
+        raise ArithmeticError("Vertex can only be divided by an integer or"
+                              " float.")
 
-    # Use the already overloaded operators for the reflected ones and augmented
-    # arithmetic assignments
+    # Use the already overloaded operators for the reflected operators and
+    # augmented arithmetic assignments.
     __radd__ = __iadd__ = __add__
     __rsub__ = __isub__ = __sub__
     __rmul__ = __imul__ = __mul__
@@ -183,8 +203,8 @@ class Edge(Element):
 
     @property
     def length(self):
-        """Compute the length of the edge."""
-        # If the edge is a straight line (i.e., it has a type `None`), then
+        """Compute the edge length."""
+        # If the edge has a type `None` (i.e., it is a straight line, then
         # return the distance between v0 and v1.
         if self.type is None:
             return distance(self.v0, self.v1)
@@ -198,10 +218,20 @@ class Edge(Element):
             np.reshape(self.v1.coords, (1, 3))
         ))
 
+        # And lastly we compute the distance between the various consecutive
+        # points in the list. The resulting values are all added together,
+        # yielding the edge length.
         return distance(points[:-1], points[1:])
 
     def write(self):
-        """Write the edge in OpenFOAM style."""
+        """Write the edge in OpenFOAM style.
+
+        Returns
+        -------
+        str
+            A rendered representation of the current Edge instance in OpenFOAM
+            style.
+        """
         points = ([self.v0.coords.tolist()] + self.points.tolist() +
                   [self.v1.coords.tolist()])
         return f"{self.type} {self.v0.id} {self.v1.id} {list2foam(points)}"
@@ -326,112 +356,3 @@ class Block(Element):
             f" {self.grading_type}Grading {list2foam(self.grading)}"
             f"{comment(self.description)}"
         )
-
-
-class Mesh():
-    """Provide an interface for blockMeshDict."""
-
-    def __init__(self):
-        self.ids = {"vertex": 0, "block": 0, "patch": 0, "edge": 0}
-        self.scale = 1
-        self.vertices = []
-        self.blocks = []
-        self.edges = []
-        self.boundaries = []
-        self.patches = []
-        self.merge_patch_pairs = []
-
-    def add_block(self, element):
-        """Register a new block to the mesh."""
-        if not isinstance(element, Block):
-            raise TypeError(f"{element} is not a Block.")
-
-        for vertex in element.vertices:
-            self.add_vertex(vertex)
-
-        for edge in element.edges:
-            self.add_edge(edge)
-
-        if element.id is None:
-            self.blocks.append(element)
-            self.blocks[-1].id = self.ids["block"]
-            self.ids["block"] += 1
-
-    def add_edge(self, edge):
-        """Register a new edge to the mesh."""
-        # If true, we have a simple straight line.  No need for registering it
-        # to the mesh.
-        if edge.type is None:
-            return
-
-        # Register the vertices defining edge extremities if not already
-        # registered
-        for vertex in [edge.v0, edge.v1]:
-            self.add_vertex(vertex)
-
-        # If edge.id is None, then the vertex was not registered before.
-        #
-        # TODO:
-        #   For now, no check is done to verify whether the inverse edge is
-        #   already defined. It makes no sense to have two edges defining the
-        #   same curve -- or even worse, defining different curves, which would
-        #   crash blockMesh. So, future versions could (should?) perform some
-        #   kind of verification
-        if edge.id is None:
-            self.edges.append(edge)
-            self.edges[-1].id = self.ids["edge"]
-            self.ids["edge"] += 1
-            return
-
-        # for i, e in enumerate(self.edges):
-        #     if len(set((edge.v0, edge.v1)) & set((e.v0, e.v1))) == 2:
-        #         print("Edge already set. This operation will override it.")
-        #         edge.id = self.edges[i].id
-        #         self.edges[i] = edge
-
-    def add_vertex(self, vertex):
-        """Register a new vertex to the mesh."""
-        if vertex.id is None:
-            self.vertices.append(vertex)
-            self.vertices[-1].id = self.ids["vertex"]
-            self.ids["vertex"] += 1
-
-    def add_patch(self, patch):
-        """Register a new patch to the mesh."""
-        if patch.id is None:
-            self.patches.append(patch)
-            self.patches[-1].id = self.ids["patch"]
-            self.ids["patch"] += 1
-
-    def add_boundary(self, boundary):
-        """Register a new boundary to the mesh."""
-        raise NotImplementedError("Sorry. Yet to implement.")
-
-    def add_mergePatchPairs(self, master, slave):
-        """Merge the target patch into master."""
-        self.merge_patch_pairs.append(PatchPair(master, slave))
-
-    def write(self, output_filename,
-              template=os.path.join(PATH_HERE, 'assets/blockMeshDict')):
-        """Write the rendered blockMeshDict to disk."""
-        with open(output_filename, 'w+') as f:
-            f.write(self.__render(template=template))
-
-    def print(self,
-              template=os.path.join(PATH_HERE, 'assets/blockMeshDict')):
-        """Print the rednered blockMeshDict to screen."""
-        print(self.__render(template=template))
-
-    def __render(self, template):
-        """Render the Jinja2 blockMeshDict template."""
-        with open(template) as t:
-            dict_template = Template(t.read())
-
-        render = dict_template.render(scale=self.scale,
-                                      vertices=self.vertices,
-                                      blocks=self.blocks,
-                                      edges=self.edges,
-                                      patches=self.patches,
-                                      mergePatchPairs=self.merge_patch_pairs)
-
-        return render
