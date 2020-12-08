@@ -119,10 +119,8 @@ def unit_normal_vector(e1, e2, inverse=False):
     e1 = Vertex(e1).coords
     e2 = Vertex(e2).coords
 
-    # Let's evaluate in which plane are we working on
-    e1_dims = np.array(~e1.astype(bool), dtype=int)
-    e2_dims = np.array(~e2.astype(bool), dtype=int)
-    empty_dims = ~(e1_dims | e2_dims)
+    # Let's evaluate in which plane we are working on
+    empty_dims = (~(e1.astype(bool) & e2.astype(bool))).astype(int)
     n_empty_dims = empty_dims.sum()
 
     if n_empty_dims == 0:
