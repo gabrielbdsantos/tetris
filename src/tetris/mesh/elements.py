@@ -33,7 +33,9 @@ class Vertex(Element):
             #
             # np.reshape is used to force a one-dimesional array with three
             # elements. Anything different than that will raise an error.
-            self.coords = np.reshape(np.pad(_args, (0, 3))[:3], (3))
+            self.coords = np.pad(
+                np.reshape(_args, _args.shape[-1]), (0, 3)
+            )[:3]
         except (TypeError, ValueError):
             raise ValueError("Invalid argument. Please, see the docstrings "
                              "for details on how to declare the coordinates.")
