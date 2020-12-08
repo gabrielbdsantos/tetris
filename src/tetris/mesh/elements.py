@@ -23,10 +23,17 @@ class Vertex(Element):
 
     def __init__(self, *args):
         try:
+            # Convert the arguments to numpy.ndarray.
             _args = np.array(args, dtype='float64')
-            _args = np.reshape(_args, (_args.shape[-1],))
-            self.coords = np.pad(_args, [0, int(3 - _args.shape[0])],
-                                 'constant', constant_values=(0))
+
+            # np.pad appends three zeros to the _args array, and we then select
+            # the first three elements of the resulting array. If _args is
+            # smaller than three, _args is filled with zeros for the missing
+            # elements. Otherwise, _args itself is returned.
+            #
+            # np.reshape is used to force a one-dimesional array with three
+            # elements. Anything different than that will raise an error.
+            self.coords = np.reshape(np.pad(_args, (0, 3))[:3], (3))
         except (TypeError, ValueError):
             raise ValueError("Invalid argument. Please, see the docstrings "
                              "for details on how to declare the coordinates.")
