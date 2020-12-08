@@ -88,7 +88,13 @@ class Mesh():
         raise NotImplementedError("Sorry. Yet to implement.")
 
     def add_mergePatchPairs(self, master, slave):
-        """Merge the target patch into master."""
+        """Merge the slave patch into the master patch."""
+        # If master and slave are not registered to the Mesh instance yet, we
+        # do it now.
+        self.add_patch(master)
+        self.add_patch(slave)
+
+        # Create a PatchPair instance and register it to the mesh instance.
         self.merge_patch_pairs.append(PatchPair(master, slave))
 
     def write(self, output_filename, template=BLOCKMESHDICT_TEMPLATE):
