@@ -187,11 +187,6 @@ def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
     return _point + rotate_about
 
 
-def ncells_simple(first_cell_size, edge_length):
-    """Return the cell count based on: first cell size and edge length."""
-    return int(np.ceil(edge_length / first_cell_size))
-
-
 def distance(point1, point2):
     """Calculate the distance between two points."""
     from ..mesh.elements import Vertex
