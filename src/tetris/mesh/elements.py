@@ -63,6 +63,12 @@ class Vertex(Element):
         """Overload the negation operator."""
         return Vertex(-self.coords)
 
+    def __eq__(self, other):
+        """Overload the comparison operator."""
+        if not isinstance(other, Vertex):
+            tmp = Vertex(other)
+        return all(self.coords == tmp.coords)
+
     def __add__(self, other):
         """Overload the addition operator."""
         # When adding to Vertex instances, we just need to add each one's
@@ -350,6 +356,17 @@ class Block(Element):
                 break
         else:
             self.edges.append(Edge(v0, v1, points, type))
+
+    def set_cell_size(self, value):
+        """Set a homogeneous cell count to obtain the given cell size."""
+        from ..utils.math import distance
+        from ..utils.block import ncells_simple
+
+        self.ncells = [
+            ncells_simple(value, distance(self.vertices[0], self.vertices[1])),
+            ncells_simple(value, distance(self.vertices[0], self.vertices[3])),
+            ncells_simple(value, distance(self.vertices[0], self.vertices[4])),
+        ]
 
     def get_face_ids(self, face=None):
         """Return a list of vertex ids for the given face label."""
