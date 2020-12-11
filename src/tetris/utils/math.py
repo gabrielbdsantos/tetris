@@ -149,21 +149,13 @@ def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
 
     if isinstance(vertex, Vertex):
         point = vertex.coords
-    elif isinstance(vertex, (list, tuple)):
-        point = np.array(vertex + [0 for _ in range(3 - len(vertex))])
-    elif isinstance(vertex, np.ndarray):
-        point = np.append(vertex, [0 for _ in range(3 - vertex.shape[0])])
+    elif isinstance(vertex, (list, tuple, np.ndarray)):
+        point = Vertex(vertex).coords
 
     if isinstance(rotate_about, Vertex):
         rotate_about = rotate_about.coords
-    elif isinstance(rotate_about, (list, tuple)):
-        rotate_about = np.array(
-            rotate_about + [0 for _ in range(3 - len(rotate_about))]
-        )
-    elif isinstance(rotate_about, np.ndarray):
-        rotate_about = np.append(
-            rotate_about, [0 for _ in range(3 - rotate_about.shape[0])]
-        )
+    elif isinstance(rotate_about, (list, tuple, np.ndarray)):
+        rotate_about = Vertex(rotate_about).coords
 
     if not in_rad:
         yaw = np.deg2rad(yaw)
@@ -180,11 +172,12 @@ def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
                             [0, c(roll), -s(roll)],
                             [0, s(roll),  c(roll)]])
 
-    rotation_matrix = np.matmul(matrix_yaw, matrix_pitch, matrix_roll)
+    rotation_matrix = np.matmul(matrix_yaw,
+                                np.matmul(matrix_pitch, matrix_roll))
 
     _point = (rotation_matrix * (point - rotate_about)).sum(1)
 
-    return _point + rotate_about
+    return Vertex(_point + rotate_about)
 
 
 def distance(point1, point2):
