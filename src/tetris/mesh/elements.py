@@ -69,6 +69,10 @@ class Vertex(Element):
             tmp = Vertex(other)
         return all(self.coords == tmp.coords)
 
+    def __ne__(self, other):
+        """Overload the 'not equal' operator."""
+        return not self.__eq__(other)
+
     def __add__(self, other):
         """Overload the addition operator."""
         # When adding to Vertex instances, we just need to add each one's
@@ -143,6 +147,12 @@ class Vertex(Element):
     __rmul__ = __imul__ = __mul__
     __rtruediv__ = __itruediv__ = __truediv__
 
+    # Overloading the __eq__ operator leads to a TypeError when trying to hash
+    # instances of the Vertex class. Hence, to retain the implementation of
+    # __hash__ from the parent class, the intepreter must be told to do so
+    # explicitly by setting __hash__ as following
+    __hash__ = Element.__hash__
+
 
 class Edge(Element):
     """Define a blockMesh edge entry."""
@@ -176,7 +186,7 @@ class Edge(Element):
 
         # Well, the code reached here, we then need to check whether the
         # provided list is correct; i.e., the points list must have a shape of
-        # (x,3,), where x denotes any positive integer. Summarizing, the points
+        # (N, 3), where x denotes any positive integer. Summarizing, the points
         # list must be a list of three-dimensional coordinates.
         if self.__points.shape[-1] != 3 or self.__points.ndim != 2:
             raise TypeError("Incorrect points list. Please see the docstrings"
@@ -348,10 +358,10 @@ class Block(Element):
 
     def set_edge(self, v0, v1, points, type='spline'):
         """Define a new edge."""
-        # Check whether there is already a edge defined between the given
+        # Check whether there is already an edge defined for the given
         # vertices.
         for i, edge in enumerate(self.edges):
-            if len(set((edge.v0, edge.v1)) & set((v0, v1))) == 2:
+            if len({(edge.v0, edge.v1)} & {(v0, v1)}) == 2:
                 self.edges[i] = Edge(v0, v1, points, type)
                 break
         else:
