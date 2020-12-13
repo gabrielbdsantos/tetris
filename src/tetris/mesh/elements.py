@@ -261,8 +261,12 @@ class Edge(Element):
             A rendered representation of the current Edge instance in OpenFOAM
             style.
         """
-        points = ([self.v0.coords.tolist()] + self.points.tolist() +
-                  [self.v1.coords.tolist()])
+        if self.type != 'arc':
+            points = ([self.v0.coords.tolist()] + self.points.tolist() +
+                      [self.v1.coords.tolist()])
+        else:
+            points = self.points.tolist()
+
         return f"{self.type} {self.v0.id} {self.v1.id} {list2foam(points)}"
 
 
