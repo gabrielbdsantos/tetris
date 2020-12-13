@@ -248,6 +248,10 @@ class Edge(Element):
         # yielding the edge length.
         return distance(points[:-1], points[1:])
 
+    def inverse_direction(self):
+        """Return an Edge instance in the inverse direction."""
+        return Edge(self.v1, self.v0, points=self.points[::-1], type=self.type)
+
     def write(self):
         """Write the edge in OpenFOAM style.
 
