@@ -66,8 +66,8 @@ class Vertex(Element):
     def __eq__(self, other):
         """Overload the comparison operator."""
         if not isinstance(other, Vertex):
-            tmp = Vertex(other)
-        return all(self.coords == tmp.coords)
+            other = Vertex(other)
+        return all(self.coords == other.coords)
 
     def __ne__(self, other):
         """Overload the 'not equal' operator."""
