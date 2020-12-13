@@ -341,6 +341,19 @@ class Block(Element):
         self.description = None
         self.id = None
 
+    # Properties
+    # -------------------------------------------------------------------------
+    @property
+    def ncells(self):
+        """Get the number of cells on each axis."""
+        return self.__ncells
+
+    @ncells.setter
+    def ncells(self, value):
+        self.__ncells = np.reshape(np.array(value, dtype=int), (3))
+
+    # Setters
+    # -------------------------------------------------------------------------
     def set_vertices(self, vertices):
         """Create a block from a list of vertices."""
         # Check whether the list of vertices is a `list` or `tuple`
@@ -369,16 +382,23 @@ class Block(Element):
         # Check whether there is already an edge defined for the given
         # vertices.
         for i, edge in enumerate(self.edges):
-            if len({(edge.v0, edge.v1)} & {(v0, v1)}) == 2:
+            if len({edge.v0, edge.v1} & {v0, v1}) == 2:
                 self.edges[i] = Edge(v0, v1, points, type)
                 break
         else:
             self.edges.append(Edge(v0, v1, points, type))
 
-    def set_cell_size(self, value):
+    def set_cell_size(self, value, axis=None):
         """Set a homogeneous cell count to obtain the given cell size."""
         from ..utils.math import distance
         from ..utils.block import ncells_simple
+
+        if axis is not None:
+            id0, id1 = self.EDGES_ON_AXIS[axis][0]
+            self.ncells[axis] = ncells_simple(
+                value, distance(self.vertices[id0], self.vertices[id1])
+            )
+            return
 
         self.ncells = [
             ncells_simple(value, distance(self.vertices[0], self.vertices[1])),
@@ -386,17 +406,74 @@ class Block(Element):
             ncells_simple(value, distance(self.vertices[0], self.vertices[4])),
         ]
 
+    # Getters
+    # -------------------------------------------------------------------------
     def get_face_ids(self, face=None):
-        """Return a list of vertex ids for the given face label."""
+        """Get a list the vertex ids for the given face label.
+
+        Parameters
+        ----------
+        face : str
+            The face label: right, left, top, bottom, front, or back.
+
+        Returns
+        -------
+        list
+            List of vertex ids that describe the given face label. The
+            list is ordered to yield an outward-pointing face.
+        """
         if face in self.FACE_MAPPING.keys():
             return [self.vertices[i] for i in self.FACE_MAPPING[face]]
 
+    def get_edge_by_vertex(self, v0, v1):
+        """Get the edge defined by local vertex v0 and v1.
+
+        Parameters
+        ----------
+        v0_id : Vertex
+        v1_id : Vertex
+
+        Returns
+        -------
+        Edge
+            The edge defined by the two vertices.
+        """
+        for edge in self.edges:
+            if len({edge.v0, edge.v1} & {v0, v1}) == 2:
+                return edge if edge.v0 == v0 else edge.inverse_direction()
+
+    def get_edge_by_vertex_ids(self, v0_id, v1_id):
+        """Get the edge defined by local vertex ids v0_id and v1_id.
+
+        Parameters
+        ----------
+        v0_id : int
+            Local vertex index.
+        v1_id : int
+            Local vertex index.
+
+        Returns
+        -------
+        Edge
+            The edge defined by the two vertices.
+        """
+        v0 = self.vertices[v0_id]
+        v1 = self.vertices[v1_id]
+
+        return self.get_edge_by_vertex(v0, v1)
+
     def write(self):
-        """Write the block in OpenFOAM style."""
+        """Write the block in OpenFOAM style.
+
+        Returns
+        -------
+        str
+            OpenFOAM entry for hex blocks.
+        """
         return (
             f"hex ({' '.join([str(v.id) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
-            f" {list2foam(self.ncells)}"
+            f" {list2foam(self.ncells.tolist())}"
             f" {self.grading_type}Grading {list2foam(self.grading)}"
             f"{comment(self.description)}"
         )
