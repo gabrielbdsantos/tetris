@@ -465,41 +465,29 @@ class Block(Element):
             return [self.vertices[i] for i in self.FACE_MAPPING[face]]
 
     def get_edge_by_vertex(self, v0, v1):
-        """Get the edge defined by local vertex v0 and v1.
+        """Get the Edge defined by the local vertices v0 and v1.
 
         Parameters
         ----------
-        v0_id : Vertex
-        v1_id : Vertex
+        v0 : int, Vertex
+            The local Vertex id or instance.
+        v1 : int, Vertex
+            The local Vertex id or instance.
 
         Returns
         -------
         Edge
             The edge defined by the two vertices.
         """
+        if not isinstance(v0, Vertex):
+            v0 = self.vertices[v0]
+
+        if not isinstance(v1, Vertex):
+            v1 = self.vertices[v1]
+
         for edge in self.edges:
-            if len({edge.v0, edge.v1} & {v0, v1}) == 2:
+            if {edge.v0, edge.v1} == {v0, v1}:
                 return edge if edge.v0 == v0 else edge.inverse_direction()
-
-    def get_edge_by_vertex_ids(self, v0_id, v1_id):
-        """Get the edge defined by local vertex ids v0_id and v1_id.
-
-        Parameters
-        ----------
-        v0_id : int
-            Local vertex index.
-        v1_id : int
-            Local vertex index.
-
-        Returns
-        -------
-        Edge
-            The edge defined by the two vertices.
-        """
-        v0 = self.vertices[v0_id]
-        v1 = self.vertices[v1_id]
-
-        return self.get_edge_by_vertex(v0, v1)
 
     def write(self):
         """Write the block in OpenFOAM style.
