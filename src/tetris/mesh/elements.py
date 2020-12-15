@@ -64,21 +64,18 @@ class Vertex(Element):
     # Let's overload some operators so we may use the Vertex class in a more
     # pythonic way.
     def __neg__(self):
-        """Overload the negation operator."""
         return Vertex(-self.coords)
 
     def __eq__(self, other):
-        """Overload the comparison operator."""
         if not isinstance(other, Vertex):
             other = Vertex(other)
+
         return all(self.coords == other.coords)
 
     def __ne__(self, other):
-        """Overload the 'not equal' operator."""
         return not self.__eq__(other)
 
     def __add__(self, other):
-        """Overload the addition operator."""
         # When adding to Vertex instances, we just need to add each one's
         # coordinates since Vertex.coords is stored as numpy.ndarray.
         if isinstance(other, Vertex):
@@ -108,7 +105,6 @@ class Vertex(Element):
                               " Numpy array of same shape.")
 
     def __sub__(self, other):
-        """Overload the subtraction operator."""
         # Any decisions here are just a copy-paste version of the addition
         # operator. Thus, please refer to `__add__` for more details.
         if isinstance(other, Vertex):
@@ -127,7 +123,6 @@ class Vertex(Element):
                               " Vertex or Numpy array of same shape.")
 
     def __mul__(self, other):
-        """Overload the multiplication operator."""
         if isinstance(other, (int, float,)):
             return Vertex(other * self.coords)
 
@@ -135,7 +130,6 @@ class Vertex(Element):
                               " float.")
 
     def __truediv__(self, other):
-        """Overload true division."""
         # Don't need to check whether `other` is zero. In such case, Python
         # itself will raise a ZeroDivisionError.
         if isinstance(other, (int, float,)):
