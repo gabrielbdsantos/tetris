@@ -226,7 +226,6 @@ class Edge(Element):
         if self.__points.size == 0:
             self.type = None
 
-    @property
     def length(self):
         """Compute the edge length."""
         # If the edge has a type `None` (i.e., it is a straight line, then
@@ -265,7 +264,7 @@ class Edge(Element):
             points = ([self.v0.coords.tolist()] + self.points.tolist() +
                       [self.v1.coords.tolist()])
         else:
-            points = self.points.tolist()
+            points = self.points[0].tolist()
 
         return f"{self.type} {self.v0.id} {self.v1.id} {list2foam(points)}"
 
@@ -396,7 +395,7 @@ class Block(Element):
         if axis is not None:
             id0, id1 = self.EDGES_ON_AXIS[axis][0]
             self.ncells[axis] = ncells_simple(
-                value, distance(self.vertices[id0], self.vertices[id1])
+                value, self.get_edge_by_vertex_ids(id0, id1).length()
             )
             return
 
