@@ -57,6 +57,10 @@ class Vertex(Element):
         v = self.coords
         return (f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){comment(self.id)}")
 
+    # Make the class subscriptable
+    def __getitem__(self, index):
+        return self.coords[index]
+
     # Let's overload some operators so we may use the Vertex class in a more
     # pythonic way.
     def __neg__(self):
@@ -268,6 +272,10 @@ class Edge(Element):
 
         return f"{self.type} {self.v0.id} {self.v1.id} {list2foam(points)}"
 
+    # Make the class subscriptable
+    def __getitem__(self, index):
+        return self.vertices[index]
+
 
 class Boundary(Element):
     """Define a blockMesh boundary entry."""
@@ -288,6 +296,10 @@ class Patch(Element):
         """Write the patch in OpenFOAM style."""
         ids = [[f.id for f in face] for face in self.faces]
         return f"{self.boundary_type} {self.name} {list2foam(ids)}"
+
+    # Make the class subscriptable
+    def __getitem__(self, index):
+        return self.faces[index]
 
 
 class PatchPair(Element):
@@ -476,3 +488,7 @@ class Block(Element):
             f" {self.grading_type}Grading {list2foam(self.grading)}"
             f"{comment(self.description)}"
         )
+
+    # Make the class subscriptable
+    def __getitem__(self, index):
+        return self.vertices[index]
