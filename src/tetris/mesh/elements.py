@@ -355,6 +355,10 @@ class Block(Element):
 
     @ncells.setter
     def ncells(self, value):
+        # Since `value` can be a list, tuple, or numpy.array, we must provide a
+        # solution for all cases. Instead of using a series of if/else clauses,
+        # it may be more interesting to convert `value` to numpy.array and then
+        # reshape it into what we want.
         self.__ncells = np.reshape(np.array(value, dtype=int), (3))
 
     # Setters
@@ -387,7 +391,7 @@ class Block(Element):
         # Check whether there is already an edge defined for the given
         # vertices.
         for i, edge in enumerate(self.edges):
-            if len({edge.v0, edge.v1} & {v0, v1}) == 2:
+            if {edge.v0, edge.v1} == {v0, v1}:
                 self.edges[i] = Edge(v0, v1, points, type)
                 break
         else:
@@ -401,7 +405,7 @@ class Block(Element):
         if axis is not None:
             id0, id1 = self.EDGES_ON_AXIS[axis][0]
             self.ncells[axis] = ncells_simple(
-                value, self.get_edge_by_vertex_ids(id0, id1).length()
+                value, self.get_edge_by_vertex(id0, id1).length()
             )
             return
 
@@ -413,6 +417,36 @@ class Block(Element):
 
     # Getters
     # -------------------------------------------------------------------------
+    def get_cell_size(self, v0, v1):
+        """Get the cell size along the edge v0--v1.
+
+        Parameters
+        ----------
+        v0 : int, Vertex
+            Vertex instance or id.
+        v1 : int, Vertex
+            Vertex instance or id.
+
+        Returns
+        -------
+        float
+            The cell size along the edge v0--v1.
+        """
+        # Get the edge to which the vertices v0 and v1 belong.
+        edge = self.get_edge_by_vertex(v0, v1)
+
+        # Get in which axis the edge lays
+        def edge_on_axis():
+            nonlocal self, edge, v0, v1
+            for i, axis in enumerate(self.EDGES_ON_AXIS):
+                for id0, id1 in axis:
+                    _v0 = self.vertices[id0]
+                    _v1 = self.vertices[id1]
+                    if {_v0, _v1} == {edge.v0, edge.v1}:
+                        return i
+
+        return edge.length() / self.ncells[edge_on_axis()]
+
     def get_face_ids(self, face=None):
         """Get a list the vertex ids for the given face label.
 
