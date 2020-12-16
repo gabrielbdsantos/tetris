@@ -47,7 +47,21 @@ def list2foam(lst):
 
 def tetris2foam(element):
     """Translate Tetris objects into OpenFOAM style."""
-    pass
+    from numpy import ndarray
+    from .elements import Vertex, Edge, Patch, PatchPair, Block
+
+    if isinstance(element, str):
+        return str2foam(element)
+    elif isinstance(element, int):
+        return int2foam(element)
+    elif isinstance(element, float):
+        return float2foam(element)
+    elif isinstance(element, (list, tuple)):
+        return lst2foam(element)
+    elif isinstance(element, ndarray):
+        return numpy2foam(element)
+    elif isinstance(element, (Vertex, Edge, Patch, PatchPair, Block)):
+        return f"{element.write()}"
 
 
 def str2foam(value):
@@ -73,5 +87,6 @@ def lst2foam(value, sep=' '):
     return f"({r})"
 
 
-# We can use the same function for lists and tuples.
-tuple2foam = list2foam
+def numpy2foam(value, sep=' '):
+    """Translate Numpy array to OpenFOAM style."""
+    return lst2foam(value.tolist(), sep)
