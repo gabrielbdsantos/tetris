@@ -1,6 +1,7 @@
 # coding: utf-8
 """Python-equivalent blockMesh elements."""
 
+import copy
 import numpy as np
 
 from ..utils.math import distance, is_collinear
@@ -339,7 +340,6 @@ class Block(Element):
         self.patches = []
 
         self.grading = [1, 1, 1]
-        self.grading_type = 'simple'
         self.ncells = [1, 1, 1]
         self.cellZone = ""
 
@@ -360,6 +360,39 @@ class Block(Element):
         # it may be more interesting to convert `value` to numpy.array and then
         # reshape it into what we want.
         self.__ncells = np.reshape(np.array(value, dtype=int), (3))
+
+    @property
+    def grading(self):
+        """Get the block grading on each axis/edge."""
+        return self.__grading
+
+    @grading.setter
+    def grading(self, value):
+        # For now, value must be either a list or a tuple
+        if not isinstance(value, (list, tuple)):
+            raise TypeError('The block grading must be expressed as either a'
+                            f'a list or a tuple. A {type(value)} was given.')
+
+        # If value has three elements, then we adopt the simpleGrading approach
+        if len(value) == 3:
+            # We copy the value linked grading levels may be changed freely
+            self.__grading = copy.deepcopy(value)
+            self.__grading_type = 'simple'
+            return
+
+        # Otherwise, the block uses the 'edgeGrading' approach, which requires
+        # a grading level for each one of the edges. Thus, the grading array
+        # must be of size 12.
+        if len(value) == 12:
+            # We copy the value linked grading levels may be changed freely
+            self.__grading = copy.deepcopy(value)
+            self.__grading_type = 'edge'
+            return
+
+        # If we reach here, the number of elements passed are wrong. So, let's
+        # throw an error
+        raise ValueError('The number of elements defining the grading must be'
+                         'either 3 (simpleGrading) or 12 (edgeGrading)')
 
     # Setters
     # -------------------------------------------------------------------------
@@ -501,7 +534,7 @@ class Block(Element):
             f"hex ({' '.join([str(v.id) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
             f" {list2foam(self.ncells.tolist())}"
-            f" {self.grading_type}Grading {list2foam(self.grading)}"
+            f" {self.__grading_type}Grading {list2foam(self.grading)}"
             f"{comment(self.description)}"
         )
 
