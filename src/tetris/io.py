@@ -2,16 +2,9 @@
 # pyright: reportUnboundVariable=false
 """Input--Output functionalities."""
 
-import os.path
 from typing import Any, Sequence
 
 from numpy import ndarray
-
-PATH_HERE = os.path.abspath(os.path.dirname(__file__))
-BLOCKMESHDICT_TEMPLATE = os.path.abspath(
-    os.path.join(PATH_HERE, r"../../assets/blockMeshDict")
-)
-
 
 def comment(string: Any) -> str:
     """Output `string` as a comment in OpenFOAM C++ style."""
