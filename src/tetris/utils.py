@@ -204,3 +204,20 @@ def distance(point1, point2):
 def is_collinear(v0, v1, v2):
     """Determine whether three points are collinear."""
     return np.cross(v0 - v1, v0 - v2).sum() == 0
+
+
+def ncells_simple(cell_size, edge_length):
+    """Compute the number of cells that satisfy the requirements.
+
+    Parameters
+    ----------
+    cell_size : float
+    edge_length : float
+
+    Returns
+    -------
+    int
+        The number of cells that satisfies the desired cell size for a
+        given edge length.
+    """
+    return int(np.ceil(edge_length / cell_size))

@@ -1,11 +1,12 @@
 # coding: utf-8
 """Python-equivalent blockMesh elements."""
 
-import copy
 import numpy as np
 
-from ..utils.math import distance, is_collinear
+from .utils import distance, is_collinear
 from .io import comment, list2foam
+
+import copy
 
 
 class Element(object):
