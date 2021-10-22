@@ -1,10 +1,15 @@
 # coding: utf-8
+# pyright: reportUnboundVariable=false
 """Mathematical utilities for Tetris."""
+
+from typing import Sequence, Union
 
 import numpy as np
 
+from tetris.elements import Vertex
 
-def normL2(array):
+
+def normL2(array: np.ndarray) -> float:
     """Return the norm L2 of a given vector or matrix.
 
     Recalling that vectors may be expressed as first-order matrices, the
@@ -22,9 +27,15 @@ def normL2(array):
     """
     # First check whether we are working with vectors.
     if array.ndim == 1:
-        element = np.reshape(array, (1, array.shape[0],))
+        element = np.reshape(
+            array,
+            (
+                1,
+                array.shape[0],
+            ),
+        )
 
-    # TODO
+    # TODO:
     #   Perhaps, we should also check for higher dimensions and not just assume
     #   that if `array` is not one-dimensional, then it is a two-dimensional
     #   matrix. Although not ideal, for now we assume that the user is working
@@ -36,7 +47,7 @@ def normL2(array):
     return np.linalg.norm(element, axis=on_axis)
 
 
-def unit_vector(v):
+def unit_vector(v: np.ndarray) -> np.ndarray:
     """Return the normalized vector vnorm in the same direction of v.
 
     Parameters
@@ -60,7 +71,11 @@ def unit_vector(v):
     return v / normL2(v)
 
 
-def unit_normal_vector(e1, e2, inverse=False):
+def unit_normal_vector(
+    e1: Union[Sequence, np.ndarray],
+    e2: Union[Sequence, np.ndarray],
+    inverse: bool = False,
+) -> np.ndarray:
     """Compute the unit normal vector.
 
     The function provides a generic way to compute the normal vector both in
@@ -110,8 +125,6 @@ def unit_normal_vector(e1, e2, inverse=False):
         The unit normal vector to the straight element that is defined by
         elements e1 and e2.
     """
-    from ..mesh.elements import Vertex
-
     # As the function handles lists, tuples, and numpy.ndarrys as well, it is
     # of interest to convert the arguments to a common element; in this case,
     # we use tetris.Vertex instances to provide a standardized numpy.ndarray
@@ -140,11 +153,15 @@ def unit_normal_vector(e1, e2, inverse=False):
     return unit_vector(np.cross(vector, empty_dim))
 
 
-def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
-               in_rad=False):
+def rotation3D(
+    vertex: Vertex,
+    yaw: float = 0,
+    pitch: float = 0,
+    roll: float = 0,
+    rotate_about: np.ndarray = np.zeros(3),
+    in_rad: bool = False,
+) -> Vertex:
     """Perform general rotation in three-dimensional euclidean space."""
-    from ..mesh.elements import Vertex
-
     c, s = np.cos, np.sin
 
     if isinstance(vertex, Vertex):
@@ -162,51 +179,42 @@ def rotation3D(vertex, yaw=0, pitch=0, roll=0, rotate_about=np.zeros(3),
         pitch = np.deg2rad(pitch)
         roll = np.deg2rad(roll)
 
-    matrix_yaw = np.array([[c(yaw), -s(yaw), 0],
-                           [s(yaw),  c(yaw), 0],
-                           [0,       0,      1]])
-    matrix_pitch = np.array([[c(pitch),  0, s(pitch)],
-                             [0,         1,        0],
-                             [-s(pitch), 0, c(pitch)]])
-    matrix_roll = np.array([[1,       0,        0],
-                            [0, c(roll), -s(roll)],
-                            [0, s(roll),  c(roll)]])
+    matrix_yaw = np.array(
+        [[c(yaw), -s(yaw), 0], [s(yaw), c(yaw), 0], [0, 0, 1]]
+    )
+    matrix_pitch = np.array(
+        [[c(pitch), 0, s(pitch)], [0, 1, 0], [-s(pitch), 0, c(pitch)]]
+    )
+    matrix_roll = np.array(
+        [[1, 0, 0], [0, c(roll), -s(roll)], [0, s(roll), c(roll)]]
+    )
 
-    rotation_matrix = np.matmul(matrix_yaw,
-                                np.matmul(matrix_pitch, matrix_roll))
+    rotation_matrix = np.matmul(
+        matrix_yaw, np.matmul(matrix_pitch, matrix_roll)
+    )
 
     _point = (rotation_matrix * (point - rotate_about)).sum(1)
 
     return Vertex(_point + rotate_about)
 
 
-def distance(point1, point2):
+def distance(
+    point1: Union[Vertex, Sequence, np.ndarray],
+    point2: Union[Vertex, Sequence, np.ndarray],
+):
     """Calculate the distance between two points."""
-    from ..mesh.elements import Vertex
+    p1 = point1.coords if isinstance(point1, Vertex) else np.array(point1)
+    p2 = point2.coords if isinstance(point2, Vertex) else np.array(point2)
 
-    if isinstance(point1, Vertex):
-        p1 = point1.coords
-    elif isinstance(point1, (list, tuple)):
-        p1 = np.array(point1)
-    elif isinstance(point1, np.ndarray):
-        p1 = point1
-
-    if isinstance(point2, Vertex):
-        p2 = point2.coords
-    elif isinstance(point2, (list, tuple)):
-        p2 = np.array(point2)
-    elif isinstance(point2, np.ndarray):
-        p2 = point2
-
-    return normL2(p1 - p2).sum()
+    return normL2(p1 - p2)
 
 
-def is_collinear(v0, v1, v2):
+def is_collinear(v0: Vertex, v1: Vertex, v2: Vertex) -> bool:
     """Determine whether three points are collinear."""
-    return np.cross(v0 - v1, v0 - v2).sum() == 0
+    return np.cross(v0 - v1, v0 - v2).sum() == 0  # type: ignore
 
 
-def ncells_simple(cell_size, edge_length):
+def ncells_simple(cell_size: float, edge_length: float) -> int:
     """Compute the number of cells that satisfy the requirements.
 
     Parameters
