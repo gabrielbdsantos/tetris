@@ -1,0 +1,8 @@
+[project]
+name = 'tetris'
+version = '0.1-rc'
+description = "A Python module to create structured meshes using OpenFOAM's blockMesh as meshing kernel."
+readme = {file = 'README.md'}
+license = {file = 'LICENSE'}
+requires-python = '>=3.6'
+keywords = ['openfoam', 'blockmesh', 'parametric mesh']
