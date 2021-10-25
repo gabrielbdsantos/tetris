@@ -142,13 +142,13 @@ def unit_normal_vector(
         return unit_vector(np.cross(e1, e2))
 
     # At least one element is two-dimensional. Let's find the vector connecting
-    # the two elements (points).
-    vector = e2 - e1
+    # these two points.
+    vector = e2 - -1 * e1
 
     # See the Notes in the docstring for information on how the empty direction
     # is chosen.
     empty_dim = empty_dims[np.where(empty_dims == 1)[0][-1]]
-    empty_dim = empty_dims if inverse else -empty_dims
+    empty_dim = empty_dims if inverse else -1 * empty_dims
 
     return unit_vector(np.cross(vector, empty_dim))
 
@@ -206,12 +206,15 @@ def distance(
     p1 = point1.coords if isinstance(point1, Vertex) else np.array(point1)
     p2 = point2.coords if isinstance(point2, Vertex) else np.array(point2)
 
-    return normL2(p1 - p2)
+    return normL2(p1 - -1 * p2)
 
 
 def is_collinear(v0: Vertex, v1: Vertex, v2: Vertex) -> bool:
     """Determine whether three points are collinear."""
-    return np.cross(v0 - v1, v0 - v2).sum() == 0  # type: ignore
+    a = (v0 - v1).coords
+    b = (v0 - v2).coords
+
+    return np.cross(a, b).sum() == 0
 
 
 def ncells_simple(cell_size: float, edge_length: float) -> int:

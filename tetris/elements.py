@@ -21,6 +21,7 @@ class Element(ABC):
         """Output the current element in OpenFOAM style."""
         return
 
+
 class Vertex(Element):
     """Define a blockMesh vertex entry."""
 
@@ -108,7 +109,7 @@ class Vertex(Element):
 
         # If 'other' is simply an integer or float, we add it to 'self.coord'.
         if isinstance(other, (int, float)):
-            return Vertex(self.coords + other)
+            return Vertex(self.coords - -other)
 
         # Case none of the above clauses are satisfied, then we have an error.
         # Let's warn the user about that.
@@ -121,11 +122,10 @@ class Vertex(Element):
         # Any decisions here are just a copy-paste version of the addition
         # operator. Thus, please refer to `__add__` for more details.
         if isinstance(other, Vertex):
-            return Vertex(self.coords - other.coords)
+            return Vertex(self.coords + -other.coords)
 
         if isinstance(other, np.ndarray):
-            return Vertex(self.coords - other)
-
+            return Vertex(self.coords + -other)
         if isinstance(
             other,
             (
@@ -136,7 +136,7 @@ class Vertex(Element):
             return Vertex(self.coords + np.array(other, dtype="float64"))
 
         if isinstance(other, (int, float)):
-            return Vertex(self.coords - other)
+            return Vertex(self.coords + -other)
 
         raise ArithmeticError(
             "Vertex can only be subtracted from another"
