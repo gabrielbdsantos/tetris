@@ -1,10 +1,12 @@
-# coding: utf-8
-# pyright: reportUnboundVariable=false
+# coding: utf-8# pyright: reportUnboundVariable=false
 """Input--Output functionalities."""
 
-from typing import Any, Sequence
+from typing import Any, Sequence, Union
 
 from numpy import ndarray
+
+from .elements import Element
+
 
 def comment(string: Any) -> str:
     """Output `string` as a comment in OpenFOAM C++ style."""
@@ -20,99 +22,33 @@ def printif(string: str, pre_sep: str = " ", post_sep: str = " ") -> str:
     return ""
 
 
-def list2foam(lst: Sequence[Any]) -> str:
-    """Translate nested Python lists into OpenFOAM lists."""
-    from .elements import Vertex
-
-    if isinstance(
-        lst[0],
-        (
-            str,
-            float,
-            int,
-        ),
-    ):
-        s = f"{str(lst[0])}"
-    elif isinstance(
-        lst[0],
-        (
-            tuple,
-            list,
-        ),
-    ):
-        s = f"{list2foam(lst[0])}"
-    elif isinstance(lst[0], Vertex):
-        s = f"{lst[0].write()}"
-
-    for i in lst[1:]:
-        if isinstance(
-            i,
-            (
-                str,
-                float,
-                int,
-            ),
-        ):
-            s += f" {str(i)}"
-        elif isinstance(
-            i,
-            (
-                tuple,
-                list,
-            ),
-        ):
-            s += f" {list2foam(i)}"
-        elif isinstance(i, Vertex):
-            s += f" {i.write()}"
-
-    return f"({s})"
-
-
-def tetris2foam(element: Any) -> str:
-    """Translate Tetris objects into OpenFOAM style."""
-    from numpy import ndarray
-
-    from .elements import Block, Edge, Patch, PatchPair, Vertex
-
-    if isinstance(element, str):
-        return str2foam(element)
-    elif isinstance(element, int):
-        return int2foam(element)
-    elif isinstance(element, float):
-        return float2foam(element)
-    elif isinstance(element, (list, tuple)):
-        return lst2foam(element)
-    elif isinstance(element, ndarray):
-        return numpy2foam(element)
-    elif isinstance(element, (Vertex, Edge, Patch, PatchPair, Block)):
-        return f"{element.write()}"
-
-    raise TypeError(f"Could not print {element}")
-
-
 def str2foam(value: str) -> str:
     """Translate Python strings to OpenFOAM style."""
     return f"{value}"
 
 
-def int2foam(value: int, show_sign: bool = False) -> str:
-    """Translate Python integer to OpenFOAM style."""
-    sign = "+" if show_sign else ""
-    return f"{value:{sign}}"
-
-
-def float2foam(
-    value: float,
-    show_sign: bool = False,
-    precision: str = ".6",
+def number2foam(
+    value: Union[int, float],
+    show_sign: bool,
+    precision: str = "",
     type: str = "f",
 ) -> str:
-    """Translate Python float to OpenFOAM style."""
+    """Translate Python numbers to OpenFOAM style."""
     sign = "+" if show_sign else ""
     return f"{value:{sign}{precision}{type}}"
 
 
-def lst2foam(value: Sequence[Any], sep: str = " ") -> str:
+def int2foam(value: int, show_sign: bool = False) -> str:
+    """Translate Python integer to OpenFOAM style."""
+    return number2foam(value, show_sign, precision=".0")
+
+
+def float2foam(value: float, show_sign: bool = False) -> str:
+    """Translate Python float to OpenFOAM style."""
+    return number2foam(value, show_sign, precision=".6", type="f")
+
+
+def sequence2foam(value: Sequence[Any], sep: str = " ") -> str:
     """Translate Python list to OpenFOAM style."""
     r = sep.join([tetris2foam(v) for v in value])
     return f"({r})"
@@ -120,4 +56,28 @@ def lst2foam(value: Sequence[Any], sep: str = " ") -> str:
 
 def numpy2foam(value: ndarray, sep: str = " ") -> str:
     """Translate Numpy array to OpenFOAM style."""
-    return lst2foam(value.tolist(), sep)
+    return sequence2foam(value.tolist(), sep)
+
+
+def element_write(value: Element) -> str:
+    """Call the write method of the Element."""
+    return value.write()
+
+
+def tetris2foam(element: Any) -> str:
+    """Translate Tetris objects into OpenFOAM style."""
+
+    translate_types = {
+        str: str2foam,
+        int: int2foam,
+        float: float2foam,
+        list: sequence2foam,
+        tuple: sequence2foam,
+        ndarray: numpy2foam,
+        Element: element_write,
+    }
+
+    if (element_type := type(element)) in translate_types:
+        return translate_types[element_type](element)
+
+    raise TypeError(f"Could not print {element} of type {element_type}")

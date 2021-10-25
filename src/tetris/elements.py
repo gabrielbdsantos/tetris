@@ -9,7 +9,7 @@ from typing import List, Sequence, Union
 
 import numpy as np
 
-from .io import comment, list2foam
+from .io import comment, tetris2foam
 from .utils import distance, is_collinear
 
 
@@ -17,7 +17,7 @@ class Element(ABC):
     """Abstract class for blockMesh elements."""
 
     @abstractmethod
-    def write(self):
+    def write(self) -> str:
         """Output the current element in OpenFOAM style."""
         return
 
@@ -317,7 +317,7 @@ class Edge(Element):
         else:
             points = self.points[0].tolist()
 
-        return f"{self.type} {self.v0.id} {self.v1.id} {list2foam(points)}"
+        return f"{self.type} {self.v0.id} {self.v1.id} {tetris2foam(points)}"
 
     # Make the class subscriptable
     def __getitem__(self, index: int) -> Vertex:
@@ -337,7 +337,7 @@ class Patch(Element):
     def write(self) -> str:
         """Write the patch in OpenFOAM style."""
         ids = [[f.id for f in face] for face in self.faces]
-        return f"{self.boundary_type} {self.name} {list2foam(ids)}"
+        return f"{self.boundary_type} {self.name} {tetris2foam(ids)}"
 
     # Make the class subscriptable
     def __getitem__(self, index: int) -> list:
@@ -355,7 +355,7 @@ class PatchPair(Element):
 
     def write(self) -> str:
         """Write the patch pair in OpenFOAM style."""
-        return f"{list2foam([self.master.name, self.slave.name])}"
+        return f"{tetris2foam([self.master.name, self.slave.name])}"
 
 
 class Block(Element):
@@ -604,8 +604,8 @@ class Block(Element):
         return (
             f"hex ({' '.join([str(v.id) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
-            f" {list2foam(self.ncells.tolist())}"
-            f" {self.__grading_type}Grading {list2foam(self.grading)}"
+            f" {tetris2foam(self.ncells.tolist())}"
+            f" {self.__grading_type}Grading {tetris2foam(self.grading)}"
             f"{comment(self.description)}"
         )
 
