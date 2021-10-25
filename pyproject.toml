@@ -1,11 +1,19 @@
-[project]
+[tool.poetry]
 name = 'tetris'
-version = '0.1-rc'
+version = '0.1.0-alpha'
 description = "A Python module to create structured meshes using OpenFOAM's blockMesh as meshing kernel."
-readme = {file = 'README.md'}
-license = {file = 'LICENSE'}
-requires-python = '>=3.6'
-keywords = ['openfoam', 'blockmesh', 'parametric mesh']
+license = 'MIT'
+readme = 'README.md'
+authors = [ 'Gabriel B. Santos <9348147+gabrielbdsantos@users.noreply.github.com>' ]
+keywords = ['openfoam', 'blockmesh', 'structured mesh']
+
+[tool.poetry.dependencies]
+python = '^3.8'
+numpy = '^1.20'
+
+[build-system]
+requires = ['poetry-core>=1.0.0']
+build-backend = 'poetry.core.masonry.api'
 
 [tool.black]
 line-length = 79
