@@ -19,8 +19,7 @@ class Element(ABC):
     @abstractmethod
     def write(self):
         """Output the current element in OpenFOAM style."""
-        return None
-
+        return
 
 class Vertex(Element):
     """Define a blockMesh vertex entry."""
@@ -323,11 +322,6 @@ class Edge(Element):
     # Make the class subscriptable
     def __getitem__(self, index: int) -> Vertex:
         return [self.v0, self.v1][index]
-
-
-# class Boundary(Element):
-#     """Define a blockMesh boundary entry."""
-#     pass
 
 
 class Patch(Element):
