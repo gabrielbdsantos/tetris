@@ -93,29 +93,28 @@ def unit_normal_vector(
     and 'element 2'. This seemed pertinent as the function handles 2D and 3D
     analysis.
 
-    As for the term 'straight element', we adopted it in a similar manner as
-    in 2D analysis the straight element is a line and in 3D analysis the
-    straight element is a plane.
+    Note that the term 'straight element' refers to a line in 2D and to a plane
+    in 3D.
 
-    Here is another trick part: which direction is the inverse? Let's think
+    Here is another trick part: which direction is the inverse one? Let's think
     about a circle in the XY plane. Now, for computing the normal vector of any
     two points on that circle, we compute the cross product of the vector
-    connecting these two points and either (0, 0, 1) or (0, 0, -1). Using
-    (0, 0, 1), the normal vector will point inward; and using (0, 0, 1), it
-    will point outward. Now, thinking on the meshing process, having a closed
-    section normally means walls. Therefore, inside walls meshing is
-    unnecessary in most cases. So, we will assume that the normal direction is
+    connecting these two points, which results in either (0, 0, 1) orthogonal
+    (0, 0, -1). Using (0, 0, 1), the normal vector will point inward; and using
+    (0, 0, -1), it will point outward. Now, thinking on the meshing process,
+    a closed section normally means 'walls'. Therefore, inside walls meshing is
+    unnecessary in most cases. So, we assume that the normal direction is
     always pointing outward when following a clockwise convention, which yields
     the vector (0, 0, -1) for computing the cross product.
 
     Parameters
     ----------
     e1 : list, tuple, numpy.ndarray
-        A first element -- point (2D) or vector (3D) -- defining the straight
-        element.
+        The first element -- point (2D) or vector (3D) -- that defines a
+        straight element.
     e2 : list, tuple, numpy.ndarray
-        A second element -- point (2D) or vector (3D) -- defining the straight
-        line.
+        The second element -- point (2D) or vector (3D) -- that defines a
+        straight line.
     inverse : bool
         If True, inverts the signal of the resulting vector.
 
@@ -145,8 +144,8 @@ def unit_normal_vector(
     # these two points.
     vector = e2 - -1 * e1
 
-    # See the Notes in the docstring for information on how the empty direction
-    # is chosen.
+    # See Notes in the docstring for information on how the empty direction is
+    # chosen.
     empty_dim = empty_dims[np.where(empty_dims == 1)[0][-1]]
     empty_dim = empty_dims if inverse else -1 * empty_dims
 
