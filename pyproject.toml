@@ -1,19 +1,26 @@
 [tool.poetry]
-name = 'tetris'
-version = '0.1.0-alpha'
+name = "tetris"
+version = "0.0.1"
 description = "A Python module to create structured meshes using OpenFOAM's blockMesh as meshing kernel."
-license = 'MIT'
-readme = 'README.md'
-authors = [ 'Gabriel B. Santos <9348147+gabrielbdsantos@users.noreply.github.com>' ]
-keywords = ['openfoam', 'blockmesh', 'structured mesh']
+license = "MIT"
+readme = "README.md"
+authors = ["Gabriel B. Santos <gabriel.bertacco@unesp.br>"]
+repository = "https://github.com/gabrielbdsantos/tetris"
+keywords = ["openfoam", "blockmesh", "structured mesh"]
 
 [tool.poetry.dependencies]
-python = '^3.8'
-numpy = '^1.20'
+python = ">=3.7,<3.10"
+numpy = ">=1.20"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+pydocstyle = "^6.1.1"
+jupyterlab = "^3.2.9"
+matplotlib = "^3.5.1"
 
 [build-system]
-requires = ['poetry-core>=1.0.0']
-build-backend = 'poetry.core.masonry.api'
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 79
