@@ -9,8 +9,8 @@ from typing import List, Sequence, Union
 
 import numpy as np
 
-from .io import comment, tetris2foam
-from .utils import distance, is_collinear
+from tetris.io import comment, tetris2foam
+from tetris.utils import distance, is_collinear
 
 
 class Element(ABC):

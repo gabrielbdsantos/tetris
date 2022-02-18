@@ -7,8 +7,8 @@ from typing import Dict, List
 
 from jinja2 import Template
 
-from .elements import Block, Edge, Patch, PatchPair, Vertex
-from .template import BLOCKMESHDICT_TEMPLATE
+from tetris.elements import Block, Boundary, Edge, Patch, PatchPair, Vertex
+from tetris.template import BLOCKMESHDICT_TEMPLATE
 
 
 class Mesh:
