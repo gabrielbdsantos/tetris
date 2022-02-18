@@ -2,11 +2,14 @@
 # pyright: reportUnboundVariable=false
 """Mathematical utilities for Tetris."""
 
-from typing import Sequence, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Sequence, Union
 
 import numpy as np
 
-from tetris.elements import Vertex
+if TYPE_CHECKING:
+    from tetris.elements import Vertex
 
 
 def normL2(array: np.ndarray) -> float:

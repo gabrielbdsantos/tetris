@@ -1,11 +1,14 @@
 # coding: utf-8# pyright: reportUnboundVariable=false
 """Input--Output functionalities."""
 
-from typing import Any, Sequence, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Sequence, Union
 
 from numpy import ndarray
 
-from .elements import Element
+if TYPE_CHECKING:
+    from tetris.elements import Element
 
 
 def comment(string: Any) -> str:
@@ -66,6 +69,7 @@ def element_write(value: Element) -> str:
 
 def tetris2foam(element: Any) -> str:
     """Translate Tetris objects into OpenFOAM style."""
+    from tetris.elements import Element
 
     translate_types = {
         str: str2foam,
