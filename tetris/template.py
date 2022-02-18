@@ -10,7 +10,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-convertToMeters {{ scale }};
+scale {{ scale }};
 fastMerge yes;
 
 vertices
