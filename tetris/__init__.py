@@ -1,5 +1,7 @@
 # coding: utf-8
-"""Python module to create meshes with OpenFOAM's blockMesh as backend."""
+"""A minimal Python wrapper around OpenFOAM's blockMesh."""
 
 from .elements import Block, Edge, Patch, Vertex
 from .mesh import Mesh
+
+__version__ = "0.1"

@@ -27,28 +27,16 @@ class Vertex(Element):
 
     def __init__(self, *args: Union[Sequence, np.ndarray]) -> None:
         try:
-            # Convert the arguments to numpy.ndarray.
-            a = np.array(args, dtype="float64")
-
-            # np.pad appends three zeros to the _args array, and we then select
-            # the first three elements of the resulting array. If _args is
-            # smaller than three, _args is filled with zeros for the missing
-            # elements. Otherwise, _args itself is returned.
-            #
-            # np.reshape is used to force a one-dimesional array with three
-            # elements. Anything different than that will raise an error.
-            self.coords: np.ndarray = np.pad(
-                np.reshape(a, a.shape[-1]), (0, 3)
-            )[:3]
+            # Append three zeros to args, and then select the first three
+            # elements of the resulting array.
+            self.coords = np.pad(np.asfarray(args).flatten(), (0, 3))[:3]
         except (TypeError, ValueError):
             raise ValueError(
                 "Invalid arguments. Please, see the docstrings "
                 "for details on how to declare the coordinates."
             )
 
-        # An ID is assigned when registering the Vertex instance to the mesh.
-        # It is also an easier way to monitor whether a Vertex has been already
-        # registered to the mesh.
+        # A valid id will be assigned when registering the vertex to a mesh.
         self.id: int = -1
 
     def write(self) -> str:
@@ -66,6 +54,9 @@ class Vertex(Element):
     # Make the class subscriptable
     def __getitem__(self, index: int) -> float:
         return self.coords[index]
+
+    def __array__(self) -> np.ndarray:
+        return self.coords
 
     # Let's overload some operators so we may use the Vertex class in a more
     # pythonic way.
@@ -327,17 +318,17 @@ class Edge(Element):
 class Patch(Element):
     """Define a blockMesh patch entry."""
 
-    def __init__(self, faces: list, boundary_type: str, name: str) -> None:
+    def __init__(self, name: str, type: str, faces: list) -> None:
         self.name = name
         self.faces = faces
-        self.boundary_type = boundary_type
+        self.type = type
 
         self.id: int = -1
 
     def write(self) -> str:
         """Write the patch in OpenFOAM style."""
         ids = [[f.id for f in face] for face in self.faces]
-        return f"{self.boundary_type} {self.name} {tetris2foam(ids)}"
+        return f"{self.type} {self.name} {tetris2foam(ids)}"
 
     # Make the class subscriptable
     def __getitem__(self, index: int) -> list:
@@ -550,8 +541,8 @@ class Block(Element):
 
         return edge.length() / self.ncells[edge_on_axis()]
 
-    def get_face_ids(self, face: str) -> List[Vertex]:
-        """Get a list the vertex ids for the given face label.
+    def get_face_vertices(self, face: str) -> List[Vertex]:
+        """List the vertex ids for the given face label.
 
         Parameters
         ----------
@@ -564,7 +555,6 @@ class Block(Element):
             List of vertex ids that describe the given face label. The
             list is ordered to yield an outward-pointing face.
         """
-        # if face in self.FACE_MAPPING.keys():
         return [self.vertices[i] for i in self.FACE_MAPPING[face]]
 
     def get_edge_by_vertex(

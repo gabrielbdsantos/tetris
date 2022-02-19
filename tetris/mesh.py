@@ -3,11 +3,12 @@
 
 from __future__ import annotations
 
+import pathlib
 from typing import Dict, List
 
 from jinja2 import Template
 
-from tetris.elements import Block, Boundary, Edge, Patch, PatchPair, Vertex
+from tetris.elements import Block, Edge, Patch, PatchPair, Vertex
 from tetris.template import BLOCKMESHDICT_TEMPLATE
 
 
@@ -46,25 +47,22 @@ class Mesh:
 
     def add_edge(self, edge: Edge) -> None:
         """Register a new edge to the mesh."""
-        # If true, we have a simple straight line.  No need for registering it
-        # to the mesh.
+        # If the edge type is undefined, we have a simple straight line. No
+        # need for registering it to the mesh.
         if edge.type is None:
             return
 
-        # Register the vertices defining edge extremities if not already
+        # Register the vertices defining the extremities if not already
         # registered
         for vertex in [edge.v0, edge.v1]:
             self.add_vertex(vertex)
 
-        # If edge.id is lower than zero, then the vertex was not registered
-        # before.
-        #
         # TODO:
         #   For now, no check is done to verify whether the inverse edge is
         #   already defined. It makes no sense to have two edges defining the
-        #   same curve -- or even worse, defining different curves, which would
-        #   crash blockMesh. So, future versions could (should?) perform some
-        #   kind of verification.
+        #   same curve -- or even worse, defining different curves --, which
+        #   would crash blockMesh. So, future versions could (should?) perform
+        #   some kind of verification.
         if edge.id < 0:
             self.edges.append(edge)
             self.edges[-1].id = self.ids["edge"]
@@ -87,7 +85,7 @@ class Mesh:
 
     def add_mergePatchPairs(self, master: Patch, slave: Patch) -> None:
         """Merge the slave patch into the master patch."""
-        # If master and slave are not yet registered to the Mesh instance,
+        # If master and slave are not yet registered to the mesh instance,
         # register them now.
         self.add_patch(master)
         self.add_patch(slave)
@@ -98,20 +96,17 @@ class Mesh:
     def write(
         self, output_filename: str, template: str = BLOCKMESHDICT_TEMPLATE
     ) -> None:
-        """Write the rendered blockMeshDict to disk."""
-        with open(output_filename, "w+") as f:
-            f.write(self.__render(template=template))
+        """Write the rendered blockMeshDict to file."""
+        with open(pathlib.Path(output_filename).resolve(), "w+") as file:
+            file.write(self._render(template=template))
 
     def print(self, template: str = BLOCKMESHDICT_TEMPLATE) -> None:
         """Print the rendered blockMeshDict to screen."""
-        print(self.__render(template=template))
+        print(self._render(template=template))
 
-    def __render(self, template: str) -> str:
-        """Render a blockMeshDict template using jinja2."""
-        with open(template) as t:
-            dict_template = Template(t.read())
-
-        render = dict_template.render(
+    def _render(self, template: str) -> str:
+        """Render a blockMeshDict template using Jinja2."""
+        render = Template(template).render(
             scale=self.scale,
             vertices=self.vertices,
             blocks=self.blocks,

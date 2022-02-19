@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "tetris"
-version = "0.0.1"
-description = "A minimal Python python wrapper around OpenFOAM's blockMesh."
+version = "0.1"
+description = "A minimal Python wrapper around OpenFOAM's blockMesh."
 license = "MIT"
 readme = "README.md"
 authors = ["Gabriel B. Santos <gabriel.bertacco@unesp.br>"]
@@ -10,8 +10,8 @@ keywords = ["openfoam", "blockmesh", "structured mesh"]
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
-numpy = ">=1.20"
-Jinja2 = "^3.0.3"
+numpy = "^1.20"
+Jinja2 = "^3.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
