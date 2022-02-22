@@ -9,8 +9,9 @@ from typing import List, Sequence, Union
 
 import numpy as np
 
-from tetris.io import comment, tetris2foam
-from tetris.utils import distance, is_collinear
+import tetris.constants
+import tetris.io
+import tetris.utils
 
 
 class Element(ABC):
@@ -29,7 +30,9 @@ class Vertex(Element):
         try:
             # Append three zeros to args, and then select the first three
             # elements of the resulting array.
-            self.coords = np.pad(np.asfarray(args).flatten(), (0, 3))[:3]
+            self.coords: np.ndarray = np.pad(
+                np.asfarray(args).flatten(), (0, 3)
+            )[:3]
         except (TypeError, ValueError):
             raise ValueError(
                 "Invalid arguments. Please, see the docstrings "
@@ -49,14 +52,16 @@ class Vertex(Element):
             OpenFOAM style.
         """
         v = self.coords
-        return f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){comment(self.id)}"
+        return (
+            f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){tetris.io.comment(self.id)}"
+        )
 
     # Make the class subscriptable
     def __getitem__(self, index: int) -> float:
         return self.coords[index]
 
-    def __array__(self) -> np.ndarray:
-        return self.coords
+    # def __array__(self) -> np.ndarray:
+    #     return self.coords
 
     # Let's overload some operators so we may use the Vertex class in a more
     # pythonic way.
@@ -117,6 +122,7 @@ class Vertex(Element):
 
         if isinstance(other, np.ndarray):
             return Vertex(self.coords + -other)
+
         if isinstance(
             other,
             (
@@ -175,7 +181,7 @@ class Vertex(Element):
     # instances of the Vertex class. Hence, to retain the implementation of
     # __hash__ from the parent class, the intepreter must be told to do so
     # explicitly by setting __hash__ as following
-    # __hash__ = Element.__hash__
+    __hash__ = Element.__hash__  # type: ignore
 
 
 class Edge(Element):
@@ -245,7 +251,7 @@ class Edge(Element):
         for i, (v0, v1, v2) in enumerate(
             zip(points[0:-2], points[1:-1], points[2:-0])
         ):
-            if is_collinear(v0, v1, v2):
+            if tetris.utils.is_collinear(v0, v1, v2):
                 to_delete.append(i + 1)
 
         # `axis = 0` is needed to get a two-dimensional array, maintaining
@@ -268,7 +274,7 @@ class Edge(Element):
         # If the edge has a type `None` (i.e., it is a straight line, then
         # return the distance between v0 and v1.
         if self.type is None:
-            return distance(self.v0, self.v1)
+            return tetris.utils.distance(self.v0, self.v1)
 
         # If the points list is not empty, we need to add both vertices to the
         # points list for computing the edge length. So, we prepend v0 and
@@ -284,7 +290,7 @@ class Edge(Element):
         # And lastly we compute the distance between the various consecutive
         # points in the list. The resulting values are all added together,
         # yielding the edge length.
-        return distance(points[:-1], points[1:])
+        return tetris.utils.distance(points[:-1], points[1:])
 
     def invert(self) -> Edge:
         """Invert the edge direction."""
@@ -308,7 +314,10 @@ class Edge(Element):
         else:
             points = self.points[0].tolist()
 
-        return f"{self.type} {self.v0.id} {self.v1.id} {tetris2foam(points)}"
+        return (
+            f"{self.type} {self.v0.id} {self.v1.id} "
+            f"{tetris.io.tetris2foam(points)}"
+        )
 
     # Make the class subscriptable
     def __getitem__(self, index: int) -> Vertex:
@@ -328,7 +337,7 @@ class Patch(Element):
     def write(self) -> str:
         """Write the patch in OpenFOAM style."""
         ids = [[f.id for f in face] for face in self.faces]
-        return f"{self.type} {self.name} {tetris2foam(ids)}"
+        return f"{self.type} {self.name} {tetris.io.tetris2foam(ids)}"
 
     # Make the class subscriptable
     def __getitem__(self, index: int) -> list:
@@ -346,37 +355,17 @@ class PatchPair(Element):
 
     def write(self) -> str:
         """Write the patch pair in OpenFOAM style."""
-        return f"{tetris2foam([self.master.name, self.slave.name])}"
+        return f"{tetris.io.tetris2foam([self.master.name, self.slave.name])}"
 
 
 class Block(Element):
     """Define a blockMesh block entry."""
 
-    # Sequence of vertices that yield an outward-pointing face
-    # Check https://cfd.direct/openfoam/user-guide/blockMesh/#x26-1850174 for
-    # more information on how vertices are labeled.
-    FACE_MAPPING = {
-        "bottom": (0, 3, 2, 1),
-        "top": (4, 5, 6, 7),
-        "right": (1, 2, 6, 5),
-        "left": (3, 0, 4, 7),
-        "front": (0, 1, 5, 4),
-        "back": (2, 3, 7, 6),
-    }
-
-    # List of edges on each direction, following the notation on
-    # https://cfd.direct/openfoam/user-guide/blockMesh/#x26-1850174
-    EDGES_ON_AXIS = (
-        ([0, 1], [2, 3], [6, 7], [4, 5]),  # x1
-        ([0, 3], [1, 2], [5, 6], [4, 7]),  # x2
-        ([0, 4], [1, 5], [2, 6], [3, 7]),  # x3
-    )
-
     def __init__(self) -> None:
         self.vertices: List[Vertex] = []
         self.edges: List[Edge] = []
-        self.faces = {}
-        self.patches = []
+        self.faces: dict[int, List[Vertex]] = {}
+        self.patches: List[Patch] = []
 
         self.grading = [1, 1, 1]
         self.ncells = np.ones(3)
@@ -467,7 +456,7 @@ class Block(Element):
 
         # Clear the list of edges and assign an Edge instance for each edge
         self.edges = []
-        for edges_on_axis in self.EDGES_ON_AXIS:
+        for edges_on_axis in tetris.constants.EDGES_ON_AXIS:
             for v0, v1 in edges_on_axis:
                 self.edges.append(Edge(self.vertices[v0], self.vertices[v1]))
 
@@ -486,25 +475,26 @@ class Block(Element):
 
     def set_cell_size(self, value: float, axis: int = None):
         """Set a homogeneous cell count to obtain the given cell size."""
-        from .utils import distance, ncells_simple
-
         if axis is not None:
-            id0, id1 = self.EDGES_ON_AXIS[axis][0]
-            self.ncells[axis] = ncells_simple(
+            id0, id1 = tetris.constants.EDGES_ON_AXIS[axis][0]
+            self.ncells[axis] = tetris.utils.ncells_simple(
                 value, self.get_edge_by_vertex(id0, id1).length()
             )
             return
 
         self.ncells = np.array(
             [
-                ncells_simple(
-                    value, distance(self.vertices[0], self.vertices[1])
+                tetris.utils.ncells_simple(
+                    value,
+                    tetris.utils.distance(self.vertices[0], self.vertices[1]),
                 ),
-                ncells_simple(
-                    value, distance(self.vertices[0], self.vertices[3])
+                tetris.utils.ncells_simple(
+                    value,
+                    tetris.utils.distance(self.vertices[0], self.vertices[3]),
                 ),
-                ncells_simple(
-                    value, distance(self.vertices[0], self.vertices[4])
+                tetris.utils.ncells_simple(
+                    value,
+                    tetris.utils.distance(self.vertices[0], self.vertices[4]),
                 ),
             ]
         )
@@ -532,7 +522,7 @@ class Block(Element):
         # Get in which axis the edge lays
         def edge_on_axis():
             nonlocal self, edge, v0, v1
-            for i, axis in enumerate(self.EDGES_ON_AXIS):
+            for i, axis in enumerate(tetris.constants.EDGES_ON_AXIS):
                 for id0, id1 in axis:
                     _v0 = self.vertices[id0]
                     _v1 = self.vertices[id1]
@@ -541,7 +531,7 @@ class Block(Element):
 
         return edge.length() / self.ncells[edge_on_axis()]
 
-    def get_face_vertices(self, face: str) -> List[Vertex]:
+    def get_face(self, face: str) -> List[Vertex]:
         """List the vertex ids for the given face label.
 
         Parameters
@@ -552,10 +542,10 @@ class Block(Element):
         Returns
         -------
         list
-            List of vertex ids that describe the given face label. The
+            A list of vertex ids that describe the given face label. The
             list is ordered to yield an outward-pointing face.
         """
-        return [self.vertices[i] for i in self.FACE_MAPPING[face]]
+        return [self.vertices[i] for i in tetris.constants.FACE_MAPPING[face]]
 
     def get_edge_by_vertex(
         self, v0: Union[Vertex, int], v1: Union[Vertex, int]
@@ -594,9 +584,10 @@ class Block(Element):
         return (
             f"hex ({' '.join([str(v.id) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
-            f" {tetris2foam(self.ncells.tolist())}"
-            f" {self.__grading_type}Grading {tetris2foam(self.grading)}"
-            f"{comment(self.description)}"
+            f" {tetris.io.tetris2foam(self.ncells.tolist())}"
+            f" {self.__grading_type}Grading"
+            f" {tetris.io.tetris2foam(self.grading)}"
+            f"{tetris.io.comment(self.description)}"
         )
 
     # Make the class subscriptable
