@@ -94,19 +94,37 @@ class Mesh:
         self.merge_patch_pairs.append(PatchPair(master, slave))
 
     def write(
-        self, output_filename: str, template: str = BLOCKMESHDICT_TEMPLATE
+        self,
+        filename: str,
+        template: str = BLOCKMESHDICT_TEMPLATE,
+        header: str = "",
+        footer: str = "",
     ) -> None:
         """Write the rendered blockMeshDict to file."""
-        with open(pathlib.Path(output_filename).resolve(), "w+") as file:
-            file.write(self._render(template=template))
+        with open(pathlib.Path(filename).resolve(), "w+") as file:
+            file.write(
+                self._render(template=template, header=header, footer=footer)
+            )
 
-    def print(self, template: str = BLOCKMESHDICT_TEMPLATE) -> None:
+    def print(
+        self,
+        template: str = BLOCKMESHDICT_TEMPLATE,
+        header: str = "",
+        footer: str = "",
+    ) -> None:
         """Print the rendered blockMeshDict to screen."""
-        print(self._render(template=template))
+        print(self._render(template=template, header=header, footer=footer))
 
-    def _render(self, template: str) -> str:
+    def _render(
+        self, template: str, header: str = "", footer: str = ""
+    ) -> str:
         """Render a blockMeshDict template using Jinja2."""
+        from tetris import __version__ as TETRIS_VERSION
+
         render = Template(template).render(
+            header=header,
+            footer=footer,
+            version=TETRIS_VERSION,
             scale=self.scale,
             vertices=self.vertices,
             blocks=self.blocks,
