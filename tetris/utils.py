@@ -4,15 +4,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from tetris.elements import Vertex
+    from tetris.elements import Vector, Vertex
 
 
-def normL2(array: np.ndarray) -> float:
+def normL2(array: NDArray[np.floating]) -> float:
     """Return the norm L2 of a given vector or matrix.
 
     Recalling that vectors may be expressed as first-order matrices, the
@@ -50,7 +51,7 @@ def normL2(array: np.ndarray) -> float:
     return np.linalg.norm(element, axis=on_axis)
 
 
-def unit_vector(v: np.ndarray) -> np.ndarray:
+def unit_vector(v: NDArray[np.floating]) -> NDArray[np.floating]:
     """Return the normalized vector vnorm in the same direction of v.
 
     Parameters
@@ -75,8 +76,8 @@ def unit_vector(v: np.ndarray) -> np.ndarray:
 
 
 def unit_normal_vector(
-    e1: Union[Sequence, np.ndarray],
-    e2: Union[Sequence, np.ndarray],
+    e1: Vector,
+    e2: Vector,
     inverse: bool = False,
 ) -> np.ndarray:
     """Compute the unit normal vector.
@@ -145,7 +146,7 @@ def unit_normal_vector(
 
     # At least one element is two-dimensional. Let's find the vector connecting
     # these two points.
-    vector = e2 - -1 * e1
+    vector = e2 + e1
 
     # See Notes in the docstring for information on how the empty direction is
     # chosen.
@@ -201,14 +202,17 @@ def rotation3D(
 
 
 def distance(
-    point1: Union[Vertex, Sequence, np.ndarray],
-    point2: Union[Vertex, Sequence, np.ndarray],
-):
+    point1: Union[Vertex, Vector], point2: Union[Vertex, Vector]
+) -> float:
     """Calculate the distance between two points."""
-    p1 = point1.coords if isinstance(point1, Vertex) else np.array(point1)
-    p2 = point2.coords if isinstance(point2, Vertex) else np.array(point2)
+    p1: NDArray[np.floating] = (
+        point1.coords if isinstance(point1, Vertex) else np.array(point1)
+    )
+    p2: NDArray[np.floating] = (
+        point2.coords if isinstance(point2, Vertex) else np.array(point2)
+    )
 
-    return normL2(p1 - -1 * p2)
+    return normL2(p1 + p2)
 
 
 def is_collinear(v0: Vertex, v1: Vertex, v2: Vertex) -> bool:
@@ -234,3 +238,13 @@ def ncells_simple(cell_size: float, edge_length: float) -> int:
         given edge length.
     """
     return int(np.ceil(edge_length / cell_size))
+
+
+def vertex_or_array(
+    element: Union[Vertex, Vector, int, float]
+) -> NDArray[np.floating]:
+    return (
+        element.coords
+        if isinstance(element, Vertex)
+        else np.array(np.ones(3) * element)
+    )

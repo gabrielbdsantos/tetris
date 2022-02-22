@@ -1,5 +1,5 @@
 # coding: utf-8
-"""Define some useful OpenFOAM constants"""
+"""Define a collection of useful constants."""
 
 # Sequence of vertices that yield an outward-pointing face
 # Check https://cfd.direct/openfoam/user-guide/blockMesh/#x26-1850174 for

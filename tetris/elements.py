@@ -1,17 +1,31 @@
 # coding: utf-8
-"""Python-equivalent blockMesh elements."""
+"""Provide python-equivalent blockMesh elements."""
 
 from __future__ import annotations
 
 import copy
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union
+from typing import List, Sequence, Tuple, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 import tetris.constants
 import tetris.io
 import tetris.utils
+
+Vector = Union[List[np.floating], Tuple[np.floating], NDArray[np.floating]]
+
+
+def to_array(
+    element: Union[Vertex, Vector, int, float]
+) -> NDArray[np.floating]:
+    """Convert the input element to a numpy array."""
+    return (
+        element.coords
+        if isinstance(element, Vertex)
+        else np.array(np.ones(3) * element)
+    )
 
 
 class Element(ABC):
@@ -26,11 +40,11 @@ class Element(ABC):
 class Vertex(Element):
     """Define a blockMesh vertex entry."""
 
-    def __init__(self, *args: Union[Sequence, np.ndarray]) -> None:
+    def __init__(self, *args: Vector) -> None:
         try:
             # Append three zeros to args, and then select the first three
             # elements of the resulting array.
-            self.coords: np.ndarray = np.pad(
+            self.coords: NDArray[np.floating] = np.pad(
                 np.asfarray(args).flatten(), (0, 3)
             )[:3]
         except (TypeError, ValueError):
@@ -56,121 +70,38 @@ class Vertex(Element):
             f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){tetris.io.comment(self.id)}"
         )
 
-    # Make the class subscriptable
+    # Make the class subscriptable.
     def __getitem__(self, index: int) -> float:
         return self.coords[index]
 
-    # def __array__(self) -> np.ndarray:
-    #     return self.coords
-
-    # Let's overload some operators so we may use the Vertex class in a more
+    # Let's overload some operators so we can use the Vertex class in a more
     # pythonic way.
     def __neg__(self) -> Vertex:
         return Vertex(-self.coords)
 
-    def __eq__(self, other: Union[Vertex, Sequence, np.ndarray]) -> bool:
-        if not isinstance(other, Vertex):
-            other = Vertex(other)
+    def __eq__(self, other: Union[Vertex, Vector]) -> bool:
+        return all(self.coords == to_array(other))
 
-        return all(self.coords == other.coords)
-
-    def __ne__(self, other: Union[Vertex, Sequence, np.ndarray]) -> bool:
+    def __ne__(self, other: Union[Vertex, Vector]) -> bool:
         return not self.__eq__(other)
 
-    def __add__(self, other: Union[Vertex, Sequence, np.ndarray]) -> Vertex:
-        # When adding to Vertex instances, we just need to add each one's
-        # coordinates since Vertex.coords is stored as numpy.ndarray.
-        if isinstance(other, Vertex):
-            return Vertex(self.coords + other.coords)
+    # For the next methods (add, sub, mul, and truediv), we adopt a little
+    # trick. Instead of using a cascade of if-else statements to check the
+    # argument type, we take advantage of numpy arrays. It is easier on the
+    # eyes to convert to a numpy array and then perform the desired operation.
+    def __add__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
+        return Vertex(self.coords + to_array(other))
 
-        # If `other` is an instance of numpy.ndarray, we can simply add
-        # `self.coords` to it. It could be wise to check whether `other` and
-        # `self.coords` have the same shape. However, as we enforce a (3,)
-        # shape for Vertex coordinates, anything different than that will raise
-        # an error. Just for the record, we are fine with that.
-        if isinstance(other, np.ndarray):
-            return Vertex(self.coords + other)
+    def __sub__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
+        return Vertex(self.coords - to_array(other))
 
-        # If 'other' is a list or tuple, we first convert it to numpy.ndarray
-        # and then add it to 'self.coords'. Again, we perform no checks to
-        # verify the list or tuple content and its dimensions.
-        if isinstance(
-            other,
-            (
-                list,
-                tuple,
-            ),
-        ):
-            return Vertex(self.coords + np.array(other, dtype="float64"))
+    def __mul__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
+        return Vertex(self.coords * to_array(other))
 
-        # If 'other' is simply an integer or float, we add it to 'self.coord'.
-        if isinstance(other, (int, float)):
-            return Vertex(self.coords - -other)
+    def __truediv__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
+        return Vertex(self.coords / to_array(other))
 
-        # Case none of the above clauses are satisfied, then we have an error.
-        # Let's warn the user about that.
-        raise ArithmeticError(
-            "Vertex can only be added to another Vertex or"
-            " Numpy array of same shape."
-        )
-
-    def __sub__(self, other: Union[Vertex, Sequence, np.ndarray]) -> Vertex:
-        # Any decisions here are just a copy-paste version of the addition
-        # operator. Thus, please refer to `__add__` for more details.
-        if isinstance(other, Vertex):
-            return Vertex(self.coords + -other.coords)
-
-        if isinstance(other, np.ndarray):
-            return Vertex(self.coords + -other)
-
-        if isinstance(
-            other,
-            (
-                list,
-                tuple,
-            ),
-        ):
-            return Vertex(self.coords + np.array(other, dtype="float64"))
-
-        if isinstance(other, (int, float)):
-            return Vertex(self.coords + -other)
-
-        raise ArithmeticError(
-            "Vertex can only be subtracted from another"
-            " Vertex or Numpy array of same shape."
-        )
-
-    def __mul__(self, other: Union[int, float]) -> Vertex:
-        if isinstance(
-            other,
-            (
-                int,
-                float,
-            ),
-        ):
-            return Vertex(other * self.coords)
-
-        raise ArithmeticError(
-            "Vertex can only be multiplied by an integer or" " float."
-        )
-
-    def __truediv__(self, other: Union[int, float]) -> Vertex:
-        # Don't need to check whether `other` is zero. In such case, Python
-        # itself will raise a ZeroDivisionError.
-        if isinstance(
-            other,
-            (
-                int,
-                float,
-            ),
-        ):
-            return Vertex(self.coords / other)
-
-        raise ArithmeticError(
-            "Vertex can only be divided by an integer or" " float."
-        )
-
-    # Use the already overloaded operators for the reflected operators and
+    # Use the already overloaded operators for both the reflected operators and
     # augmented arithmetic assignments.
     __radd__ = __iadd__ = __add__
     __rsub__ = __isub__ = __sub__
