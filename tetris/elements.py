@@ -120,7 +120,7 @@ class Vertex(Element):
 class Edge(Element):
     """Define a blockMesh edge entry."""
 
-    __slots__ = ["v0", "v1", "points", "type", "id"]
+    __slots__ = ["v0", "v1", "__points", "type", "id"]
 
     def __init__(
         self,
@@ -304,8 +304,9 @@ class Block(Element):
         "edges",
         "faces",
         "patches",
-        "grading",
-        "ncells",
+        "__grading",
+        "__grading_type",
+        "__ncells",
         "cellZone",
         "description",
         "id",
