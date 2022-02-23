@@ -128,6 +128,8 @@ def unit_normal_vector(
         The unit normal vector to the straight element that is defined by
         elements e1 and e2.
     """
+    from tetris.elements import Vertex
+
     # As the function handles lists, tuples, and numpy.ndarrys as well, it is
     # of interest to convert the arguments to a common element; in this case,
     # we use tetris.Vertex instances to provide a standardized numpy.ndarray
