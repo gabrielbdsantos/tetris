@@ -40,6 +40,8 @@ class Element(ABC):
 class Vertex(Element):
     """Define a blockMesh vertex entry."""
 
+    __slots__ = ["coords", "id"]
+
     def __init__(self, *args: Vector) -> None:
         try:
             # Append three zeros to args, and then select the first three
@@ -118,11 +120,13 @@ class Vertex(Element):
 class Edge(Element):
     """Define a blockMesh edge entry."""
 
+    __slots__ = ["v0", "v1", "points", "type", "id"]
+
     def __init__(
         self,
         v0: Vertex,
         v1: Vertex,
-        points: np.ndarray = np.array([]),
+        points: NDArray[np.floating] = np.array([]),
         type: str = None,
     ) -> None:
         # Check whether the vertices are at the same location.
@@ -160,8 +164,7 @@ class Edge(Element):
         if self.__points.shape[-1] != 3 or self.__points.ndim != 2:
             raise TypeError(
                 "Incorrect points list. Please see the docstrings"
-                " for more information on how to define the points"
-                " list."
+                " for information on how to define the points list."
             )
 
         # To check the collinearity of the points, we need to add the ending
@@ -190,8 +193,8 @@ class Edge(Element):
         np.delete(points, to_delete, axis=0)
 
         # As we added both vertices to the points list for checking for
-        # collinear points, we now need to disregard them, excluding the
-        # first and last entries in `points`.
+        # collinear points, we now need to exclude the first and last entries
+        # in `points`.
         self.__points = points[1:-1]
 
         # Finally, if the points list is empty, then we have a straight line
@@ -258,6 +261,8 @@ class Edge(Element):
 class Patch(Element):
     """Define a blockMesh patch entry."""
 
+    __slots__ = ["name", "faces", "type", "id"]
+
     def __init__(self, name: str, type: str, faces: list) -> None:
         self.name = name
         self.faces = faces
@@ -278,6 +283,8 @@ class Patch(Element):
 class PatchPair(Element):
     """Define a blockMesh mergePatchPair entry."""
 
+    __slots__ = ["master", "slave", "id"]
+
     def __init__(self, master: Patch, slave: Patch) -> None:
         self.master = master
         self.slave = slave
@@ -291,6 +298,18 @@ class PatchPair(Element):
 
 class Block(Element):
     """Define a blockMesh block entry."""
+
+    __slots__ = [
+        "vertices",
+        "edges",
+        "faces",
+        "patches",
+        "grading",
+        "ncells",
+        "cellZone",
+        "description",
+        "id",
+    ]
 
     def __init__(self) -> None:
         self.vertices: List[Vertex] = []

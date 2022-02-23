@@ -15,6 +15,16 @@ from tetris.template import BLOCKMESHDICT_TEMPLATE
 class Mesh:
     """Provide a mesh object interface that outputs a blockMeshDict."""
 
+    __slots__ = [
+        "ids",
+        "scale",
+        "vertices",
+        "blocks",
+        "edges",
+        "patches",
+        "merge_patch_pairs",
+    ]
+
     def __init__(self) -> None:
         self.ids: Dict[str, int] = {
             "vertex": 0,
