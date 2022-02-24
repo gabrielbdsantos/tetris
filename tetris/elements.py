@@ -18,7 +18,7 @@ from tetris.typing import BlockMeshElement, Vector
 class Vertex(BlockMeshElement):
     """Define a blockMesh vertex entry."""
 
-    __slots__ = ["coords", "id"]
+    __slots__ = ["coords"]
 
     def __init__(self, *args: Vector) -> None:
         try:
@@ -32,10 +32,6 @@ class Vertex(BlockMeshElement):
                 "Invalid arguments. Please, see the docstrings "
                 "for details on how to declare the coordinates."
             )
-
-        # A valid id will be assigned when registering the vertex to the mesh
-        # element.
-        self.id: int = -1
 
     @property
     def name(self) -> str:
@@ -111,7 +107,7 @@ class Vertex(BlockMeshElement):
         return Vertex(-self.coords)
 
     def __eq__(self, other: Union[Vertex, Vector]) -> bool:
-        return np.isclose(self.coords, tetris.utils.to_array(other), rtol=0.0)
+        return all(self.coords == tetris.utils.to_array(other))
 
     def __ne__(self, other: Union[Vertex, Vector]) -> bool:
         return not self.__eq__(other)
@@ -149,7 +145,7 @@ class Vertex(BlockMeshElement):
 class Edge(BlockMeshElement):
     """Define a blockMesh edge entry."""
 
-    __slots__ = ["v0", "v1", "__points", "type", "id"]
+    __slots__ = ["v0", "v1", "__points", "type"]
 
     def __init__(
         self,
@@ -168,8 +164,6 @@ class Edge(BlockMeshElement):
         self.v1 = v1
         self.points = points
         self.type = type
-
-        self.id: int = -1
 
     @property
     def points(self) -> np.ndarray:
@@ -290,14 +284,12 @@ class Edge(BlockMeshElement):
 class Patch(BlockMeshElement):
     """Define a blockMesh patch entry."""
 
-    __slots__ = ["name", "faces", "type", "id"]
+    __slots__ = ["name", "faces", "type"]
 
     def __init__(self, name: str, type: str, faces: list) -> None:
         self.name = name
         self.faces = faces
         self.type = type
-
-        self.id: int = -1
 
     def write(self) -> str:
         """Write the patch in OpenFOAM style."""
@@ -312,13 +304,11 @@ class Patch(BlockMeshElement):
 class PatchPair(BlockMeshElement):
     """Define a blockMesh mergePatchPair entry."""
 
-    __slots__ = ["master", "slave", "id"]
+    __slots__ = ["master", "slave"]
 
     def __init__(self, master: Patch, slave: Patch) -> None:
         self.master = master
         self.slave = slave
-
-        self.id: int = -1
 
     def write(self) -> str:
         """Write the patch pair in OpenFOAM style."""
@@ -338,7 +328,6 @@ class Block(BlockMeshElement):
         "__ncells",
         "cellZone",
         "description",
-        "id",
     ]
 
     def __init__(self) -> None:
@@ -352,7 +341,6 @@ class Block(BlockMeshElement):
         self.cellZone: str = ""
 
         self.description: str = ""
-        self.id: int = -1
 
     @property
     def name(self) -> str:
