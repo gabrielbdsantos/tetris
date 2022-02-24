@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import copy
-from typing import List, Sequence, Union
+from typing import Collection, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -111,7 +111,7 @@ class Vertex(BlockMeshElement):
         return Vertex(-self.coords)
 
     def __eq__(self, other: Union[Vertex, Vector]) -> bool:
-        return all(self.coords == tetris.utils.to_array(other))
+        return np.isclose(self.coords, tetris.utils.to_array(other), rtol=0.0)
 
     def __ne__(self, other: Union[Vertex, Vector]) -> bool:
         return not self.__eq__(other)
@@ -342,10 +342,10 @@ class Block(BlockMeshElement):
     ]
 
     def __init__(self) -> None:
-        self.vertices: List[Vertex] = []
-        self.edges: List[Edge] = []
-        self.faces: dict[int, List[Vertex]] = {}
-        self.patches: List[Patch] = []
+        self.vertices: list[Vertex] = []
+        self.edges: list[Edge] = []
+        self.faces: dict[int, list[Vertex]] = {}
+        self.patches: list[Patch] = []
 
         self.grading = [1, 1, 1]
         self.ncells = np.ones(3)
@@ -409,26 +409,11 @@ class Block(BlockMeshElement):
             "either 3 (simpleGrading) or 12 (edgeGrading)"
         )
 
-    def set_vertices(self, vertices: Sequence[Vertex]) -> None:
+    def set_vertices(self, vertices: Collection[Vertex]) -> None:
         """Create a block from a list of vertices."""
-        # Check whether the list of vertices is a `list` or `tuple`
-        if not isinstance(
-            vertices,
-            (
-                list,
-                tuple,
-            ),
-        ):
-            raise TypeError(
-                "List of vertices should be either a list or tuple."
-            )
-
-        # Check whether the list have eight items. Anything different than this
-        # is not acceptable.
+        # Check whether the list have eight items.
         if len(vertices) != 8:
-            raise ValueError(
-                "Incorrect number of vertices. Expected 8 vertices"
-            )
+            raise ValueError("Incorrect number of vertices. Expected 8")
 
         # Clear the list of vertices and assign the given one
         self.vertices = []
@@ -454,64 +439,8 @@ class Block(BlockMeshElement):
         else:
             self.edges.append(Edge(v0, v1, points, type))
 
-    def set_cell_size(self, value: float, axis: int = None):
-        """Set a homogeneous cell count to obtain the given cell size."""
-        if axis is not None:
-            id0, id1 = tetris.constants.EDGES_ON_AXIS[axis][0]
-            self.ncells[axis] = tetris.utils.ncells_simple(
-                value, self.get_edge_by_vertex(id0, id1).length()
-            )
-            return
-
-        self.ncells = np.array(
-            [
-                tetris.utils.ncells_simple(
-                    value,
-                    tetris.utils.distance(self.vertices[0], self.vertices[1]),
-                ),
-                tetris.utils.ncells_simple(
-                    value,
-                    tetris.utils.distance(self.vertices[0], self.vertices[3]),
-                ),
-                tetris.utils.ncells_simple(
-                    value,
-                    tetris.utils.distance(self.vertices[0], self.vertices[4]),
-                ),
-            ]
-        )
-
-    def get_cell_size(self, v0: Vertex, v1: Vertex) -> float:
-        """Get the cell size along the edge v0--v1.
-
-        Parameters
-        ----------
-        v0 : int, Vertex
-            Vertex instance or id.
-        v1 : int, Vertex
-            Vertex instance or id.
-
-        Returns
-        -------
-        float
-            The cell size along the edge v0--v1.
-        """
-        # Get the edge to which the vertices v0 and v1 belong.
-        edge = self.get_edge_by_vertex(v0, v1)
-
-        # Get in which axis the edge lays
-        def edge_on_axis():
-            nonlocal self, edge, v0, v1
-            for i, axis in enumerate(tetris.constants.EDGES_ON_AXIS):
-                for id0, id1 in axis:
-                    _v0 = self.vertices[id0]
-                    _v1 = self.vertices[id1]
-                    if {_v0, _v1} == {edge.v0, edge.v1}:
-                        return i
-
-        return edge.length() / self.ncells[edge_on_axis()]
-
-    def get_face(self, face: str) -> List[Vertex]:
-        """List the vertex ids for the given face label.
+    def get_face(self, face: str) -> tuple[Vertex, ...]:
+        """List the vertices ids for the given face label.
 
         Parameters
         ----------
@@ -520,11 +449,13 @@ class Block(BlockMeshElement):
 
         Returns
         -------
-        list
-            A list of vertex ids that describe the given face label. The
+        tuple
+            A tuple of vertex ids that describe the given face label. The
             list is ordered to yield an outward-pointing face.
         """
-        return [self.vertices[i] for i in tetris.constants.FACE_MAPPING[face]]
+        return tuple(
+            [self.vertices[id] for id in tetris.constants.FACE_MAPPING[face]]
+        )
 
     def get_edge_by_vertex(
         self, v0: Union[Vertex, int], v1: Union[Vertex, int]
