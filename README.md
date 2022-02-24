@@ -2,18 +2,22 @@
 
 A minimal Python wrapper around OpenFOAM's blockMesh.
 
-### Background
 
-blockMesh is a great meshing tool --- in my _humble_ opinion, one of the best.
-It is at the same time simple and robust, enabling the user to create
-structured meshes for almost any geometry. The downside, however: it can be
-really complicated --- and sometimes boring --- to compute the coordinates of
-several vertices, set the correct vertex sequence that defines each one of the
-blocks, compute the number of elements and grading level that results in the
-desired cell size, etc. On top of that, complex geometric features are usually
-only feasible via splines (see [this section][tableedges] in the blockMesh
-documentation), which are defined by a complex set of spatial coordinates that
-are quasi impossible to type in manually.
+:warning: **Warning**: the project is still in _alpha_/_beta_. Breaking changes
+may occur at any time.
+
+### Rationale
+
+blockMesh is a great meshing tool. It is at the same time simple and robust,
+enabling the user to create structured meshes for almost any geometry. The
+downside, however: it can be really complicated --- and sometimes boring --- to
+compute the coordinates of several vertices, set the correct vertex sequence
+that defines each one of the blocks, compute the number of elements and grading
+level that results in the desired cell size, etc. On top of that, complex
+geometric features are usually only feasible via splines (see [this
+section][tableedges] in the blockMesh documentation), which are defined by a
+complex set of spatial coordinates that are quasi impossible to type in
+manually.
 
 So, why not integrate blockMesh with a user-friendly programming language like
 Python?
@@ -51,15 +55,19 @@ number, and non-matching grading levels.
 
 * [ ] Integration with an optimization tool
 
-  > Integrating the module with an optimization tool could require less input
-  > information from the user, allowing faster mesh prototyping.
+  > Integrating the module with an optimization tool would require less input
+  > information from the user.
 
 * [ ] Integration with a visualization tool.
 
   > Using something like [PyVista][pyvista] or [K3D-Jupyter][k3djupyter]
-  > would allow plotting and inspect vertices, edges, and blocks without ever
-  > leaving Jupyter Lab/Notebook;
+  > would allow plotting and inspection of vertices, edges, and blocks without
+  > ever leaving Jupyter Lab/Notebook;
 
+
+### Alternatives and similar projects
+
+* [blockmeshbuilder](https://github.com/NauticalMile64/blockmeshbuilder)
 
 ---
 

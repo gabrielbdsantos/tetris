@@ -69,7 +69,7 @@ def element_write(value: Element) -> str:
 
 def tetris2foam(element: Any) -> str:
     """Translate Tetris objects into OpenFOAM style."""
-    from tetris.elements import Element
+    from tetris.elements import BlockMeshElement
 
     translate_types = {
         str: str2foam,
@@ -78,7 +78,7 @@ def tetris2foam(element: Any) -> str:
         list: sequence2foam,
         tuple: sequence2foam,
         ndarray: numpy2foam,
-        Element: element_write,
+        BlockMeshElement: element_write,
     }
 
     if (element_type := type(element)) in translate_types:

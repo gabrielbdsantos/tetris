@@ -1,5 +1,4 @@
 # coding: utf-8
-# pyright: reportUnboundVariable=false
 """Mathematical utilities for Tetris."""
 
 from __future__ import annotations
@@ -8,9 +7,12 @@ from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.spatial.transform import Rotation
+
+from tetris.typing import Vector
 
 if TYPE_CHECKING:
-    from tetris.elements import Vector, Vertex
+    from tetris.elements import Vertex
 
 
 def normL2(array: NDArray[np.floating]) -> float:
@@ -75,6 +77,7 @@ def unit_vector(v: NDArray[np.floating]) -> NDArray[np.floating]:
     return v / normL2(v)
 
 
+# NOTE: Review code
 def unit_normal_vector(
     e1: Vector,
     e2: Vector,
@@ -158,49 +161,39 @@ def unit_normal_vector(
     return unit_vector(np.cross(vector, empty_dim))
 
 
-def rotation3D(
-    vertex: Vertex,
+def rotate3D(
+    coords: NDArray[np.floating],
     yaw: float = 0,
     pitch: float = 0,
     roll: float = 0,
-    rotate_about: np.ndarray = np.zeros(3),
-    in_rad: bool = False,
-) -> Vertex:
-    """Perform general rotation in three-dimensional euclidean space."""
-    c, s = np.cos, np.sin
+    origin: NDArray[np.floating] = np.zeros(3),
+    degrees: bool = True,
+) -> NDArray[np.floating]:
+    """Rotate a 3D point about a reference point.
 
-    if isinstance(vertex, Vertex):
-        point = vertex.coords
-    elif isinstance(vertex, (list, tuple, np.ndarray)):
-        point = Vertex(vertex).coords
+    Parameters
+    ----------
+    coords: np.ndarray
+        A three-dimensional point in space.
+    yaw: float
+        Rotation angle about the z axis.
+    pitch: float
+        Rotation angle about the y axis.
+    roll: float
+        Rotation angle about the x axis.
+    origin: np.ndarray
+        The point about which rotation is done.
+    degrees: bool
+        Interpret angles as in degrees rather than radians.
 
-    if isinstance(rotate_about, Vertex):
-        rotate_about = rotate_about.coords
-    elif isinstance(rotate_about, (list, tuple, np.ndarray)):
-        rotate_about = Vertex(rotate_about).coords
-
-    if not in_rad:
-        yaw = np.deg2rad(yaw)
-        pitch = np.deg2rad(pitch)
-        roll = np.deg2rad(roll)
-
-    matrix_yaw = np.array(
-        [[c(yaw), -s(yaw), 0], [s(yaw), c(yaw), 0], [0, 0, 1]]
-    )
-    matrix_pitch = np.array(
-        [[c(pitch), 0, s(pitch)], [0, 1, 0], [-s(pitch), 0, c(pitch)]]
-    )
-    matrix_roll = np.array(
-        [[1, 0, 0], [0, c(roll), -s(roll)], [0, s(roll), c(roll)]]
-    )
-
-    rotation_matrix = np.matmul(
-        matrix_yaw, np.matmul(matrix_pitch, matrix_roll)
-    )
-
-    _point = (rotation_matrix * (point - rotate_about)).sum(1)
-
-    return Vertex(_point + rotate_about)
+    Return
+    ------
+    np.ndarray
+        The new coordiantes
+    """
+    return (coords - origin) @ Rotation.from_euler(
+        "zyx", [-yaw, -pitch, -roll], degrees=degrees
+    ).as_matrix() + origin
 
 
 def distance(
@@ -242,11 +235,13 @@ def ncells_simple(cell_size: float, edge_length: float) -> int:
     return int(np.ceil(edge_length / cell_size))
 
 
-def vertex_or_array(
+def to_array(
     element: Union[Vertex, Vector, int, float]
 ) -> NDArray[np.floating]:
+    from tetris.elements import Vertex
+
     return (
         element.coords
         if isinstance(element, Vertex)
-        else np.array(np.ones(3) * element)
+        else np.asarray(np.ones(3) * element)
     )

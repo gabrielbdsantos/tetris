@@ -4,8 +4,7 @@
 from __future__ import annotations
 
 import copy
-from abc import ABC, abstractmethod
-from typing import List, Sequence, Tuple, Union
+from typing import List, Sequence, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,31 +12,10 @@ from numpy.typing import NDArray
 import tetris.constants
 import tetris.io
 import tetris.utils
-
-Vector = Union[List[np.floating], Tuple[np.floating], NDArray[np.floating]]
-
-
-def to_array(
-    element: Union[Vertex, Vector, int, float]
-) -> NDArray[np.floating]:
-    """Convert the input element to a numpy array."""
-    return (
-        element.coords
-        if isinstance(element, Vertex)
-        else np.array(np.ones(3) * element)
-    )
+from tetris.typing import BlockMeshElement, Vector
 
 
-class Element(ABC):
-    """Abstract class for blockMesh elements."""
-
-    @abstractmethod
-    def write(self) -> str:
-        """Output the current element in OpenFOAM style."""
-        return
-
-
-class Vertex(Element):
+class Vertex(BlockMeshElement):
     """Define a blockMesh vertex entry."""
 
     __slots__ = ["coords", "id"]
@@ -55,8 +33,60 @@ class Vertex(Element):
                 "for details on how to declare the coordinates."
             )
 
-        # A valid id will be assigned when registering the vertex to a mesh.
+        # A valid id will be assigned when registering the vertex to the mesh
+        # element.
         self.id: int = -1
+
+    @property
+    def name(self) -> str:
+        """Get the vertex name."""
+        return f"v{self.id}"
+
+    def move(self, vector: Union[Vector, int, float]) -> None:
+        """Move the vertex.
+
+        Parameters
+        ----------
+        vector: int, float, vector
+            The translation vector.
+        """
+        self.coords += tetris.utils.to_array(vector)
+
+    def rotate(
+        self,
+        yaw: float = 0,
+        pitch: float = 0,
+        roll: float = 0,
+        origin: Union[Vertex, Vector] = np.zeros(3),
+        degrees: bool = True,
+    ) -> NDArray[np.floating]:
+        """Rotate the vertex around a reference point.
+
+        Parameters
+        ----------
+        yaw: float
+            Rotation angle about the z axis.
+        pitch: float
+            Rotation angle about the y axis.
+        roll: float
+            Rotation angle about the x axis.
+        origin: np.ndarray
+            The point about which rotation is done.
+        degrees: bool
+            Interpret angles as in degrees rather than radians.
+
+        Return
+        ------
+        Vertex
+            A new vertex instance.
+        """
+        origin = np.asarray(
+            origin.coords if isinstance(origin, Vertex) else origin
+        )
+
+        return tetris.utils.rotate3D(
+            self.coords, yaw, pitch, roll, origin, degrees
+        )
 
     def write(self) -> str:
         """Write the coordinates in OpenFOAM style.
@@ -68,9 +98,8 @@ class Vertex(Element):
             OpenFOAM style.
         """
         v = self.coords
-        return (
-            f"({v[0]:.6f} {v[1]:.6f} {v[2]:.6f}){tetris.io.comment(self.id)}"
-        )
+
+        return f"name {self.name} ({v[0]:.6f} {v[1]:.6f} {v[2]:.6f})"
 
     # Make the class subscriptable.
     def __getitem__(self, index: int) -> float:
@@ -82,7 +111,7 @@ class Vertex(Element):
         return Vertex(-self.coords)
 
     def __eq__(self, other: Union[Vertex, Vector]) -> bool:
-        return all(self.coords == to_array(other))
+        return all(self.coords == tetris.utils.to_array(other))
 
     def __ne__(self, other: Union[Vertex, Vector]) -> bool:
         return not self.__eq__(other)
@@ -92,16 +121,16 @@ class Vertex(Element):
     # argument type, we take advantage of numpy arrays. It is easier on the
     # eyes to convert to a numpy array and then perform the desired operation.
     def __add__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
-        return Vertex(self.coords + to_array(other))
+        return Vertex(self.coords + tetris.utils.to_array(other))
 
     def __sub__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
-        return Vertex(self.coords - to_array(other))
+        return Vertex(self.coords - tetris.utils.to_array(other))
 
     def __mul__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
-        return Vertex(self.coords * to_array(other))
+        return Vertex(self.coords * tetris.utils.to_array(other))
 
     def __truediv__(self, other: Union[Vertex, Vector, int, float]) -> Vertex:
-        return Vertex(self.coords / to_array(other))
+        return Vertex(self.coords / tetris.utils.to_array(other))
 
     # Use the already overloaded operators for both the reflected operators and
     # augmented arithmetic assignments.
@@ -114,10 +143,10 @@ class Vertex(Element):
     # instances of the Vertex class. Hence, to retain the implementation of
     # __hash__ from the parent class, the intepreter must be told to do so
     # explicitly by setting __hash__ as following
-    __hash__ = Element.__hash__  # type: ignore
+    __hash__ = BlockMeshElement.__hash__  # type: ignore
 
 
-class Edge(Element):
+class Edge(BlockMeshElement):
     """Define a blockMesh edge entry."""
 
     __slots__ = ["v0", "v1", "__points", "type", "id"]
@@ -249,7 +278,7 @@ class Edge(Element):
             points = self.points[0].tolist()
 
         return (
-            f"{self.type} {self.v0.id} {self.v1.id} "
+            f"{self.type} {self.v0.name} {self.v1.name} "
             f"{tetris.io.tetris2foam(points)}"
         )
 
@@ -258,7 +287,7 @@ class Edge(Element):
         return [self.v0, self.v1][index]
 
 
-class Patch(Element):
+class Patch(BlockMeshElement):
     """Define a blockMesh patch entry."""
 
     __slots__ = ["name", "faces", "type", "id"]
@@ -280,7 +309,7 @@ class Patch(Element):
         return self.faces[index]
 
 
-class PatchPair(Element):
+class PatchPair(BlockMeshElement):
     """Define a blockMesh mergePatchPair entry."""
 
     __slots__ = ["master", "slave", "id"]
@@ -296,8 +325,8 @@ class PatchPair(Element):
         return f"{tetris.io.tetris2foam([self.master.name, self.slave.name])}"
 
 
-class Block(Element):
-    """Define a blockMesh block entry."""
+class Block(BlockMeshElement):
+    """Define a blockMesh entry for hexahedral blocks."""
 
     __slots__ = [
         "vertices",
@@ -325,20 +354,23 @@ class Block(Element):
         self.description: str = ""
         self.id: int = -1
 
-    # Properties
-    # -------------------------------------------------------------------------
     @property
-    def ncells(self) -> np.ndarray:
+    def name(self) -> str:
+        """Get the block name."""
+        return f"b{self.id}"
+
+    @property
+    def ncells(self) -> NDArray[np.integer]:
         """Get the number of cells on each axis."""
         return self.__ncells
 
     @ncells.setter
-    def ncells(self, value: np.ndarray) -> None:
+    def ncells(self, value: Vector) -> None:
         # Since `value` can be a list, tuple, or numpy.array, we must provide a
         # solution for all cases. Instead of using a series of if/else clauses,
         # it may be more interesting to convert `value` to numpy.array and then
         # reshape it into what we want.
-        self.__ncells: np.ndarray = np.reshape(np.array(value, dtype=int), (3))
+        self.__ncells = np.asarray(value).reshape(3).astype(np.integer)
 
     @property
     def grading(self):
@@ -377,8 +409,6 @@ class Block(Element):
             "either 3 (simpleGrading) or 12 (edgeGrading)"
         )
 
-    # Setters
-    # -------------------------------------------------------------------------
     def set_vertices(self, vertices: Sequence[Vertex]) -> None:
         """Create a block from a list of vertices."""
         # Check whether the list of vertices is a `list` or `tuple`
@@ -450,8 +480,6 @@ class Block(Element):
             ]
         )
 
-    # Getters
-    # -------------------------------------------------------------------------
     def get_cell_size(self, v0: Vertex, v1: Vertex) -> float:
         """Get the cell size along the edge v0--v1.
 
@@ -533,7 +561,8 @@ class Block(Element):
             OpenFOAM entry for hex blocks.
         """
         return (
-            f"hex ({' '.join([str(v.id) for v in self.vertices])})"
+            f"name {self.name} "
+            f"hex ({' '.join([str(v.name) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
             f" {tetris.io.tetris2foam(self.ncells.tolist())}"
             f" {self.__grading_type}Grading"
