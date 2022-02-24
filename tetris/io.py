@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence, Union
+from typing import Any, Sequence, Union
 
 from numpy import ndarray
 
-if TYPE_CHECKING:
-    from tetris.elements import Element
+from tetris.typing import BlockMeshElement
 
 
 def comment(string: Any) -> str:
@@ -62,14 +61,13 @@ def numpy2foam(value: ndarray, sep: str = " ") -> str:
     return sequence2foam(value.tolist(), sep)
 
 
-def element_write(value: Element) -> str:
+def blockMeshElement2foam(value: BlockMeshElement) -> str:
     """Call the write method of the Element."""
     return value.write()
 
 
 def tetris2foam(element: Any) -> str:
     """Translate Tetris objects into OpenFOAM style."""
-    from tetris.elements import BlockMeshElement
 
     translate_types = {
         str: str2foam,
@@ -78,7 +76,7 @@ def tetris2foam(element: Any) -> str:
         list: sequence2foam,
         tuple: sequence2foam,
         ndarray: numpy2foam,
-        BlockMeshElement: element_write,
+        BlockMeshElement: blockMeshElement2foam,
     }
 
     if (element_type := type(element)) in translate_types:
