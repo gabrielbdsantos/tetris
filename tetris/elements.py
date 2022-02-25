@@ -301,6 +301,20 @@ class Patch(BlockMeshElement):
         return self.faces[index]
 
 
+class DefaultPatch(BlockMeshElement):
+    """Define a blockMesh defaultPatch entry."""
+
+    __slots__ = ["name", "type"]
+
+    def __init__(self, name: str, type: str) -> None:
+        self.name = name
+        self.type = type
+
+    def write(self) -> str:
+        """Write the patch in OpenFOAM style."""
+        return f"defaultPatch {{ name {self.name}}}; type {self.type} }}"
+
+
 class PatchPair(BlockMeshElement):
     """Define a blockMesh mergePatchPair entry."""
 

@@ -137,11 +137,11 @@ def unit_normal_vector(
     # of interest to convert the arguments to a common element; in this case,
     # we use tetris.Vertex instances to provide a standardized numpy.ndarray
     # element.
-    e1 = Vertex(e1).coords
-    e2 = Vertex(e2).coords
+    _e1 = Vertex(e1).coords
+    _e2 = Vertex(e2).coords
 
     # Let's evaluate in which plane we are working on
-    empty_dims = (~(e1.astype(bool) & e2.astype(bool))).astype(int)
+    empty_dims = (~(_e1.astype(bool) & _e2.astype(bool))).astype(int)
     n_empty_dims = empty_dims.sum()
 
     if n_empty_dims == 0:
@@ -151,7 +151,7 @@ def unit_normal_vector(
 
     # At least one element is two-dimensional. Let's find the vector connecting
     # these two points.
-    vector = e2 + e1
+    vector = _e1 + _e2
 
     # See Notes in the docstring for information on how the empty direction is
     # chosen.

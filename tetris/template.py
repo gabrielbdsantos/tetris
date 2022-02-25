@@ -39,11 +39,9 @@ faces
     {{ e.write() }}{% endfor %}
 );
 
-defaultPatch
-(
-    {%- if defaultPatch %}
-    {{- defaultPatch.write() }}{% endif %}
-);
+{%- if defaultPatch %}
+{{- defaultPatch.write() }}
+{% endif %}
 
 boundary
 (
