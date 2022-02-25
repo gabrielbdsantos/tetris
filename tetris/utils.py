@@ -12,7 +12,7 @@ from scipy.spatial.transform import Rotation
 from tetris.typing import Vector
 
 if TYPE_CHECKING:
-    from tetris.elements import Vertex
+    from tetris.blockmesh.vertex import Vertex
 
 
 def normL2(array: NDArray[np.floating]) -> float:
@@ -238,7 +238,7 @@ def ncells_simple(cell_size: float, edge_length: float) -> int:
 def to_array(
     element: Union[Vertex, Vector, int, float]
 ) -> NDArray[np.floating]:
-    from tetris.elements import Vertex
+    from tetris.blockmesh.vertex import Vertex
 
     return (
         element.coords

@@ -1,14 +1,17 @@
 # coding: utf-8
-"""Interface for registering blockMesh elements in a mesh instance."""
+"""Interface for registering blockMesh elements to a mesh instance."""
 
 from __future__ import annotations
 
 import pathlib
-from typing import Dict, List
 
 from jinja2 import Template
 
-from tetris.elements import Block, GenericEdge, Patch, PatchPair, Vertex
+from tetris.blockmesh.block import Block
+from tetris.blockmesh.edge import Edge
+from tetris.blockmesh.geometry import Geometry
+from tetris.blockmesh.patch import Face, Patch, PatchPair
+from tetris.blockmesh.vertex import Vertex
 from tetris.template import BLOCKMESHDICT_TEMPLATE
 
 
@@ -18,44 +21,56 @@ class Mesh:
     __slots__ = [
         "ids",
         "scale",
+        "geometries",
         "vertices",
         "blocks",
         "edges",
+        "faces",
         "patches",
         "merge_patch_pairs",
     ]
 
     def __init__(self) -> None:
-        self.ids: Dict[str, int] = {
+        self.ids: dict[str, int] = {
             "vertex": 0,
             "block": 0,
             "patch": 0,
             "edge": 0,
         }
         self.scale: int = 1
-        self.vertices: List[Vertex] = []
-        self.blocks: List[Block] = []
-        self.edges: List[GenericEdge] = []
-        self.patches: List[Patch] = []
-        self.merge_patch_pairs: List[PatchPair] = []
+        self.geometries: list[Geometry] = []
+        self.vertices: list[Vertex] = []
+        self.blocks: list[Block] = []
+        self.edges: list[Edge] = []
+        self.faces: list[Face] = []
+        self.patches: list[Patch] = []
+        self.merge_patch_pairs: list[PatchPair] = []
 
-    def add_block(self, element: Block) -> None:
+    def add_geometry(self, geometry: Geometry) -> None:
+        """Register a new geometry to the mesh."""
+        if not isinstance(geometry, Geometry):
+            raise TypeError(f"{geometry} is not a valid geometry.")
+
+        # TODO: check whether there are other geometries with the same name.
+        self.geometries.append(geometry)
+
+    def add_block(self, block: Block) -> None:
         """Register a new block to the mesh."""
-        if not isinstance(element, Block):
-            raise TypeError(f"{element} is not a Block.")
+        if not isinstance(block, Block):
+            raise TypeError(f"{block} is not a valid block.")
 
-        for vertex in element.vertices:
+        for vertex in block.vertices:
             self.add_vertex(vertex)
 
-        for edge in element.edges:
+        for edge in block.edges:
             self.add_edge(edge)
 
-        if element.id < 0:
-            self.blocks.append(element)
+        if block.id < 0:
+            self.blocks.append(block)
             self.blocks[-1].id = self.ids["block"]
             self.ids["block"] += 1
 
-    def add_edge(self, edge: GenericEdge) -> None:
+    def add_edge(self, edge: Edge) -> None:
         """Register a new edge to the mesh."""
         # If the edge type is undefined, we have a simple straight line. No
         # need for registering it to the mesh.
@@ -103,6 +118,13 @@ class Mesh:
         # Create a PatchPair instance and register it to the mesh instance.
         self.merge_patch_pairs.append(PatchPair(master, slave))
 
+    def add_face(self, face: Face) -> None:
+        """Register a new face to the mesh."""
+        if not isinstance(face, Face):
+            raise TypeError(f"{face} is not a valid geometry.")
+
+        self.faces.append(face)
+
     def write(
         self,
         filename: str,
@@ -136,9 +158,11 @@ class Mesh:
             footer=footer,
             version=TETRIS_VERSION,
             scale=self.scale,
+            geometries=self.geometries,
             vertices=self.vertices,
             blocks=self.blocks,
             edges=[edge for edge in self.edges if edge.type != "line"],
+            faces=self.faces,
             patches=self.patches,
             mergePatchPairs=self.merge_patch_pairs,
         )

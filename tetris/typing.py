@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, List, Tuple, Type, Union
 
 import numpy as np
@@ -28,12 +28,8 @@ class BlockMeshElement(ABC):
         ...
 
 
-class GenericEdge(BlockMeshElement):
+class Edge(BlockMeshElement):
     """Base class for edge objects."""
-
-    type: str
-    grading: float = 1.0
-    ncells: int = 1
 
     def __init__(self, v0: Vertex, v1: Vertex) -> None:
         # Check whether the vertices are at the same location.
@@ -45,8 +41,13 @@ class GenericEdge(BlockMeshElement):
         self.v0 = v0
         self.v1 = v1
 
+    @abstractproperty
+    def type(self) -> str:
+        """The edge type."""
+        ...
+
     @abstractmethod
-    def invert(self) -> GenericEdge:
+    def invert(self) -> Edge:
         """Invert the edge direction."""
         ...
 
