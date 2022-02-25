@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tetris"
-version = "0.1.0"
+version = "0.2.0"
 description = "A minimal Python wrapper around OpenFOAM's blockMesh."
 license = "MIT"
 readme = "README.md"
