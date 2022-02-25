@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Collection, Union
+from typing import Collection, Sequence, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 import tetris.constants
 import tetris.io
 import tetris.utils
-from tetris.typing import BlockMeshElement, Vector
+from tetris.typing import BlockMeshElement, GenericEdge, Vector
 
 
 class Vertex(BlockMeshElement):
@@ -24,9 +24,7 @@ class Vertex(BlockMeshElement):
         try:
             # Append three zeros to args, and then select the first three
             # elements of the resulting array.
-            self.coords: NDArray[np.floating] = np.pad(
-                np.asfarray(args).flatten(), (0, 3)
-            )[:3]
+            self.coords = np.pad(np.asfarray(args).flatten(), (0, 3))[:3]
         except (TypeError, ValueError):
             raise ValueError(
                 "Invalid arguments. Please, see the docstrings "
@@ -142,143 +140,93 @@ class Vertex(BlockMeshElement):
     __hash__ = BlockMeshElement.__hash__  # type: ignore
 
 
-class Edge(BlockMeshElement):
-    """Define a blockMesh edge entry."""
+class LineEdge(GenericEdge):
+    """Define a simple straight edge."""
 
-    __slots__ = ["v0", "v1", "__points", "type"]
+    type = "line"
+
+    def __init__(self, v0: Vertex, v1: Vertex) -> None:
+        super().__init__(v0, v1)
+
+    def invert(self) -> LineEdge:
+        return LineEdge(self.v1, self.v0)
+
+    def write(self) -> str:
+        return f"{self.type} {self.v0.name} {self.v1.name}"
+
+
+class ArcEdge(GenericEdge):
+    type = "arc"
+
+
+class ArcMidEdge(ArcEdge):
+
+    __slots__ = ["point"]
 
     def __init__(
         self,
         v0: Vertex,
         v1: Vertex,
-        points: NDArray[np.floating] = np.array([]),
-        type: str = None,
+        point: NDArray[np.floating],
     ) -> None:
-        # Check whether the vertices are at the same location.
-        if v0 == v1:
-            raise ValueError(
-                "Zero-length edge. Vertices are at the same point in space."
-            )
-
-        self.v0 = v0
-        self.v1 = v1
-        self.points = points
-        self.type = type
-
-    @property
-    def points(self) -> np.ndarray:
-        """Define a list of points defining the edge."""
-        return self.__points
-
-    @points.setter
-    def points(self, points: np.ndarray) -> None:
-        # Let us work with numpy.array insted of simple lists.
-        self.__points = np.array(points, dtype="float64")
-
-        # The points list is empty. No need to go any further.
-        if self.__points.size == 0:
-            self.type = None
-            return
-
-        # Well, the code reached here, we then need to check whether the
-        # provided list is correct; i.e., the points list must have a shape of
-        # (N, 3), where x denotes any positive integer. Summarizing, the points
-        # list must be a list of three-dimensional coordinates.
-        if self.__points.shape[-1] != 3 or self.__points.ndim != 2:
-            raise TypeError(
-                "Incorrect points list. Please see the docstrings"
-                " for information on how to define the points list."
-            )
-
-        # To check the collinearity of the points, we need to add the ending
-        # vertices to the list of points.
-        points = np.concatenate(
-            (
-                np.reshape(self.v0.coords, (1, 3)),
-                np.array(self.points),
-                np.reshape(self.v1.coords, (1, 3)),
-            )
-        )
-
-        # Let us find and delete collinear points. Here, v0, v1, and v2 are
-        # three consecutive points in the points list. If they are collinear,
-        # the line can be represented by v0 and v2 only, eliminating the need
-        # to store v1 as well.
-        to_delete = []
-        for i, (v0, v1, v2) in enumerate(
-            zip(points[0:-2], points[1:-1], points[2:-0])
-        ):
-            if tetris.utils.is_collinear(v0, v1, v2):
-                to_delete.append(i + 1)
-
-        # `axis = 0` is needed to get a two-dimensional array, maintaining
-        # consistence.
-        np.delete(points, to_delete, axis=0)
-
-        # As we added both vertices to the points list for checking for
-        # collinear points, we now need to exclude the first and last entries
-        # in `points`.
-        self.__points = points[1:-1]
-
-        # Finally, if the points list is empty, then we have a straight line
-        # between v0 and v1. Thereby, we must change the `type` of the current
-        # instance to `None`.
-        if self.__points.size == 0:
-            self.type = None
-
-    def length(self) -> float:
-        """Compute the edge length."""
-        # If the edge has a type `None` (i.e., it is a straight line, then
-        # return the distance between v0 and v1.
-        if self.type is None:
-            return tetris.utils.distance(self.v0, self.v1)
-
-        # If the points list is not empty, we need to add both vertices to the
-        # points list for computing the edge length. So, we prepend v0 and
-        # append v1.
-        points = np.concatenate(
-            (
-                np.reshape(self.v0.coords, (1, 3)),
-                np.array(self.points),
-                np.reshape(self.v1.coords, (1, 3)),
-            )
-        )
-
-        # And lastly we compute the distance between the various consecutive
-        # points in the list. The resulting values are all added together,
-        # yielding the edge length.
-        return tetris.utils.distance(points[:-1], points[1:])
-
-    def invert(self) -> Edge:
-        """Invert the edge direction."""
-        return Edge(self.v1, self.v0, points=self.points[::-1], type=self.type)
+        super().__init__(v0, v1)
+        self.point = point
 
     def write(self) -> str:
-        """Write the edge in OpenFOAM style.
-
-        Returns
-        -------
-        str
-            A rendered representation of the current Edge instance in OpenFOAM
-            style.
-        """
-        if self.type != "arc":
-            points = (
-                [self.v0.coords.tolist()]
-                + self.points.tolist()
-                + [self.v1.coords.tolist()]
-            )
-        else:
-            points = self.points[0].tolist()
-
         return (
             f"{self.type} {self.v0.name} {self.v1.name} "
-            f"{tetris.io.tetris2foam(points)}"
+            f"{tetris.io.tetris2foam(self.point)}"
         )
 
-    # Make the class subscriptable
-    def __getitem__(self, index: int) -> Vertex:
-        return [self.v0, self.v1][index]
+
+class ArcOriginEdge(ArcEdge):
+
+    __slots__ = ["factor"]
+
+    def __init__(
+        self,
+        v0: Vertex,
+        v1: Vertex,
+        origin: NDArray[np.floating],
+        factor: float = 1.0,
+    ) -> None:
+        super().__init__(v0, v1)
+        self.origin = origin
+        self.factor = factor
+
+    def write(self) -> str:
+        return (
+            f"{self.type} {self.v0.name} {self.v1.name} origin {self.factor} "
+            f"{tetris.io.tetris2foam(self.origin)}"
+        )
+
+
+class SequenceEdge(GenericEdge):
+
+    __slots__ = ["points"]
+
+    def __init__(
+        self, v0: Vertex, v1: Vertex, points: Sequence[NDArray[np.floating]]
+    ) -> None:
+        super().__init__(v0, v1)
+        self.points = points
+
+    def invert(self) -> SequenceEdge:
+        return self.__class__(self.v1, self.v0, self.points[::-1])
+
+    def write(self) -> str:
+        return (
+            f"{self.type} {self.v0.name} {self.v1.name} "
+            f"{tetris.io.tetris2foam(self.points)}"
+        )
+
+
+class SplineEdge(SequenceEdge):
+    type = "spline"
+
+
+class PolyLineEdge(SequenceEdge):
+    type = "polyLine"
 
 
 class Patch(BlockMeshElement):
@@ -339,19 +287,18 @@ class Block(BlockMeshElement):
         "patches",
         "__grading",
         "__grading_type",
-        "__ncells",
+        "ncells",
         "cellZone",
         "description",
     ]
 
     def __init__(self) -> None:
         self.vertices: list[Vertex] = []
-        self.edges: list[Edge] = []
-        self.faces: dict[int, list[Vertex]] = {}
+        self.edges: list[GenericEdge] = []
         self.patches: list[Patch] = []
 
         self.grading = [1, 1, 1]
-        self.ncells = np.ones(3)
+        self.ncells = [1, 1, 1]
         self.cellZone: str = ""
 
         self.description: str = ""
@@ -360,19 +307,6 @@ class Block(BlockMeshElement):
     def name(self) -> str:
         """Get the block name."""
         return f"b{self.id}"
-
-    @property
-    def ncells(self) -> NDArray[np.integer]:
-        """Get the number of cells on each axis."""
-        return self.__ncells
-
-    @ncells.setter
-    def ncells(self, value: Vector) -> None:
-        # Since `value` can be a list, tuple, or numpy.array, we must provide a
-        # solution for all cases. Instead of using a series of if/else clauses,
-        # it may be more interesting to convert `value` to numpy.array and then
-        # reshape it into what we want.
-        self.__ncells = np.asarray(value).reshape(3).astype(np.integer)
 
     @property
     def grading(self):
@@ -413,40 +347,31 @@ class Block(BlockMeshElement):
 
     def set_vertices(self, vertices: Collection[Vertex]) -> None:
         """Create a block from a list of vertices."""
-        # Check whether the list have eight items.
+        # Check whether the list have eight vertices.
         if len(vertices) != 8:
             raise ValueError("Incorrect number of vertices. Expected 8")
 
-        # Clear the list of vertices and assign the given one
-        self.vertices = []
-        for vertex in vertices:
-            self.vertices.append(vertex)
+        # Set the list of vertices.
+        self.vertices = [vertex for vertex in vertices]
 
-        # Clear the list of edges and assign an Edge instance for each edge
-        self.edges = []
-        for edges_on_axis in tetris.constants.EDGES_ON_AXIS:
-            for v0, v1 in edges_on_axis:
-                self.edges.append(Edge(self.vertices[v0], self.vertices[v1]))
+        # Set the edges as straight lines.
+        self.edges = [
+            LineEdge(self.vertices[v0], self.vertices[v1])
+            for v0, v1 in tetris.constants.BLOCK_EDGES
+        ]
 
-    def set_edge(
-        self, v0: Vertex, v1: Vertex, points: np.ndarray, type: str = "spline"
-    ) -> None:
+    def set_edge(self, edge: GenericEdge) -> None:
         """Define a new edge."""
-        # Check whether there is already an edge defined for the given
-        # vertices.
-        for i, edge in enumerate(self.edges):
-            if {edge.v0, edge.v1} == {v0, v1}:
-                self.edges[i] = Edge(v0, v1, points, type)
-                break
-        else:
-            self.edges.append(Edge(v0, v1, points, type))
+        self.edges[
+            tetris.constants.BLOCK_EDGES.index(tuple({edge.v0, edge.v1}))
+        ] = edge
 
-    def get_face(self, face: str) -> tuple[Vertex, ...]:
+    def face(self, label: str) -> tuple[Vertex, ...]:
         """List the vertices ids for the given face label.
 
         Parameters
         ----------
-        face : str
+        label : str
             The face label: right, left, top, bottom, front, or back.
 
         Returns
@@ -456,33 +381,30 @@ class Block(BlockMeshElement):
             list is ordered to yield an outward-pointing face.
         """
         return tuple(
-            [self.vertices[id] for id in tetris.constants.FACE_MAPPING[face]]
+            [self.vertices[id] for id in tetris.constants.FACE_MAPPING[label]]
         )
 
-    def get_edge_by_vertex(
-        self, v0: Union[Vertex, int], v1: Union[Vertex, int]
-    ) -> Edge:
+    def get_edge_by_vertex(self, v0: Vertex, v1: Vertex) -> GenericEdge:
         """Get the Edge defined by the local vertices v0 and v1.
 
         Parameters
         ----------
-        v0 : int, Vertex
-            The local Vertex id or instance.
-        v1 : int, Vertex
-            The local Vertex id or instance.
+        v0 : Vertex
+            The local vertex instance.
+        v1 : Vertex
+            The local vertex instance.
 
         Returns
         -------
-        Edge
+        GenericEdge
             The edge defined by the two vertices.
         """
-        if not isinstance(v0, Vertex):
-            v0 = self.vertices[v0]
+        id0 = self.vertices.index(v0)
+        id1 = self.vertices.index(v1)
 
-        if not isinstance(v1, Vertex):
-            v1 = self.vertices[v1]
-
-        edge = [e for e in self.edges if {e.v0, e.v1} == {v0, v1}][0]
+        edge = self.edges[
+            tetris.constants.BLOCK_EDGES.index(tuple({id0, id1}))
+        ]
         return edge if edge.v0 == v0 else edge.invert()
 
     def write(self) -> str:
@@ -497,7 +419,7 @@ class Block(BlockMeshElement):
             f"name {self.name} "
             f"hex ({' '.join([str(v.name) for v in self.vertices])})"
             f"{' ' + self.cellZone if self.cellZone else ''}"
-            f" {tetris.io.tetris2foam(self.ncells.tolist())}"
+            f" {tetris.io.tetris2foam(self.ncells)}"
             f" {self.__grading_type}Grading"
             f" {tetris.io.tetris2foam(self.grading)}"
             f"{tetris.io.comment(self.description)}"

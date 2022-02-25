@@ -8,7 +8,7 @@ from typing import Dict, List
 
 from jinja2 import Template
 
-from tetris.elements import Block, Edge, Patch, PatchPair, Vertex
+from tetris.elements import Block, GenericEdge, Patch, PatchPair, Vertex
 from tetris.template import BLOCKMESHDICT_TEMPLATE
 
 
@@ -35,7 +35,7 @@ class Mesh:
         self.scale: int = 1
         self.vertices: List[Vertex] = []
         self.blocks: List[Block] = []
-        self.edges: List[Edge] = []
+        self.edges: List[GenericEdge] = []
         self.patches: List[Patch] = []
         self.merge_patch_pairs: List[PatchPair] = []
 
@@ -55,7 +55,7 @@ class Mesh:
             self.blocks[-1].id = self.ids["block"]
             self.ids["block"] += 1
 
-    def add_edge(self, edge: Edge) -> None:
+    def add_edge(self, edge: GenericEdge) -> None:
         """Register a new edge to the mesh."""
         # If the edge type is undefined, we have a simple straight line. No
         # need for registering it to the mesh.
@@ -138,7 +138,7 @@ class Mesh:
             scale=self.scale,
             vertices=self.vertices,
             blocks=self.blocks,
-            edges=self.edges,
+            edges=[edge for edge in self.edges if edge.type != "line"],
             patches=self.patches,
             mergePatchPairs=self.merge_patch_pairs,
         )
