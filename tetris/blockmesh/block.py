@@ -16,6 +16,17 @@ from tetris.typing import BlockMeshElement
 class Block(BlockMeshElement):
     """Base class for blocks."""
 
+    def __init__(self) -> None:
+        self.vertices: list[Vertex] = []
+        self.edges: list[Edge] = []
+        self.patches: list[Patch] = []
+
+        self.grading = [1, 1, 1]
+        self.ncells = [1, 1, 1]
+        self.cellZone: str = ""
+
+        self.description: str = ""
+
 
 class HexBlock(Block):
     """Define a blockMesh entry for hexahedral blocks."""
@@ -33,15 +44,7 @@ class HexBlock(Block):
     ]
 
     def __init__(self) -> None:
-        self.vertices: list[Vertex] = []
-        self.edges: list[Edge] = []
-        self.patches: list[Patch] = []
-
-        self.grading = [1, 1, 1]
-        self.ncells = [1, 1, 1]
-        self.cellZone: str = ""
-
-        self.description: str = ""
+        super().__init__()
 
     @property
     def name(self) -> str:

@@ -2,7 +2,6 @@
 
 A minimal Python wrapper around OpenFOAM's blockMesh.
 
-
 :warning: **Warning**: the project is still in _beta_. Breaking changes may
 occur at any time.
 
@@ -49,16 +48,11 @@ number, and non-matching grading levels.
   > like to dig into the code. Thus, a separate documentation would be of great
   > interest.
 
-* [ ] Tests for code verification
+* [ ] Include tests for code verification and reliability.
 
-* [ ] Auto cell matching
+* [ ] Allow auto cell and grading matching between connected blocks.
 
-* [ ] Integration with an optimization tool
-
-  > Integrating the module with an optimization tool would require less input
-  > information from the user.
-
-* [ ] Integration with a visualization tool.
+* [ ] Integrate a visualization tool.
 
   > Using something like [PyVista][pyvista] or [K3D-Jupyter][k3djupyter]
   > would allow plotting and inspection of vertices, edges, and blocks without

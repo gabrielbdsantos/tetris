@@ -131,7 +131,7 @@ def unit_normal_vector(
         The unit normal vector to the straight element that is defined by
         elements e1 and e2.
     """
-    from tetris.elements import Vertex
+    from tetris.blockmesh import Vertex
 
     # As the function handles lists, tuples, and numpy.ndarrys as well, it is
     # of interest to convert the arguments to a common element; in this case,
@@ -192,7 +192,7 @@ def rotate3D(
         The new coordiantes
     """
     return (coords - origin) @ Rotation.from_euler(
-        "zyx", [-yaw, -pitch, -roll], degrees=degrees
+        "zyx", np.asarray([-yaw, -pitch, -roll]), degrees=degrees
     ).as_matrix() + origin
 
 
@@ -243,5 +243,5 @@ def to_array(
     return (
         element.coords
         if isinstance(element, Vertex)
-        else np.asarray(np.ones(3) * element)
+        else np.ones(3) * np.asarray(element)
     )

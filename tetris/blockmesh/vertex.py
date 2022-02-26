@@ -20,7 +20,9 @@ class Vertex(BlockMeshElement):
         try:
             # Append three zeros to args, and then select the first three
             # elements of the resulting array.
-            self.coords = np.pad(np.asfarray(args).flatten(), (0, 3))[:3]
+            self.coords = np.pad(
+                np.asfarray(args).flatten(), np.array([0, 3])
+            )[:3]
         except (TypeError, ValueError):
             raise ValueError(
                 "Invalid arguments. Please, see the docstrings "
