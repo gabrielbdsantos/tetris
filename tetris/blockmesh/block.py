@@ -14,21 +14,6 @@ from tetris.typing import BlockMeshElement
 
 
 class Block(BlockMeshElement):
-    """Base class for blocks."""
-
-    def __init__(self) -> None:
-        self.vertices: list[Vertex] = []
-        self.edges: list[Edge] = []
-        self.patches: list[Patch] = []
-
-        self.grading = [1, 1, 1]
-        self.ncells = [1, 1, 1]
-        self.cellZone: str = ""
-
-        self.description: str = ""
-
-
-class HexBlock(Block):
     """Define a blockMesh entry for hexahedral blocks."""
 
     __slots__ = [
@@ -44,7 +29,15 @@ class HexBlock(Block):
     ]
 
     def __init__(self) -> None:
-        super().__init__()
+        self.vertices: list[Vertex] = []
+        self.edges: list[Edge] = []
+        self.patches: list[Patch] = []
+
+        self.grading = [1, 1, 1]
+        self.ncells = [1, 1, 1]
+        self.cellZone: str = ""
+
+        self.description: str = ""
 
     @property
     def name(self) -> str:
@@ -105,12 +98,8 @@ class HexBlock(Block):
 
     def set_edge(self, edge: Edge) -> None:
         """Define a new edge."""
-        id0 = self.vertices.index(edge.v0)
-        id1 = self.vertices.index(edge.v1)
-
-        self.edges[
-            tetris.constants.BLOCK_EDGES.index(tuple({id0, id1}))
-        ] = edge
+        ids = [self.vertices.index(edge.v0), self.vertices.index(edge.v1)]
+        self.edges[tetris.constants.BLOCK_EDGES.index(sorted(ids))] = edge
 
     def face(self, label: str) -> tuple[Vertex, ...]:
         """List the vertices ids for the given face label.
@@ -145,12 +134,9 @@ class HexBlock(Block):
         Edge
             The edge defined by the two vertices.
         """
-        id0 = self.vertices.index(v0)
-        id1 = self.vertices.index(v1)
+        ids = [self.vertices.index(v0), self.vertices.index(v1)]
+        edge = self.edges[tetris.constants.BLOCK_EDGES.index(sorted(ids))]
 
-        edge = self.edges[
-            tetris.constants.BLOCK_EDGES.index(tuple({id0, id1}))
-        ]
         return edge if edge.v0 == v0 else edge.invert()
 
     def write(self) -> str:

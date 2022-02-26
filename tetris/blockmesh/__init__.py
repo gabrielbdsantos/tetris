@@ -1,7 +1,7 @@
 # coding: utf-8
 """Collection of python wrappers around various blockMesh elements."""
 
-from tetris.blockmesh.block import HexBlock
+from tetris.blockmesh.block import Block
 from tetris.blockmesh.edge import (
     ArcMidEdge,
     ArcOriginEdge,
