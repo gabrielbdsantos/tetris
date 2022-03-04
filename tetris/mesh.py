@@ -125,6 +125,22 @@ class Mesh:
 
         self.faces.append(face)
 
+    def reset(self) -> None:
+        """Reset the current instance and element ids."""
+        for attribute in (
+            "geometries",
+            "blocks",
+            "faces",
+            "edges",
+            "vertices",
+            "patches",
+            "merge_patch_pairs",
+        ):
+            for element in self.__getattribute__(attribute):
+                element.id = -1
+
+        self.__init__()
+
     def write(
         self,
         filename: str,
