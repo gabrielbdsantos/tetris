@@ -19,7 +19,8 @@ def normL2(array: NDArray[np.floating]) -> float:
     """Return the norm L2 of a given vector or matrix.
 
     Recalling that vectors may be expressed as first-order matrices, the
-    function can be used as generic function for computing the L2 norm of both.
+    procedure can be used as generic function for computing the L2 norm of
+    both.
 
     Patameters
     ----------
@@ -31,26 +32,14 @@ def normL2(array: NDArray[np.floating]) -> float:
     float
         The norm L2 of a given vector or matrix.
     """
-    # First check whether we are working with vectors.
-    if array.ndim == 1:
-        element = np.reshape(
-            array,
-            (
-                1,
-                array.shape[0],
-            ),
+    return np.linalg.norm(array, axis=-1).reshape(
+        None
+        if array.ndim == 1
+        else (
+            array.shape[0],
+            1,
         )
-
-    # TODO:
-    #   Perhaps, we should also check for higher dimensions and not just assume
-    #   that if `array` is not one-dimensional, then it is a two-dimensional
-    #   matrix. Although not ideal, for now we assume that the user is working
-    #   with matrices with no more than two dimensions.
-    else:
-        element = array
-
-    on_axis = element.ndim - 1
-    return np.linalg.norm(element, axis=on_axis)
+    )
 
 
 def unit_vector(v: NDArray[np.floating]) -> NDArray[np.floating]:
