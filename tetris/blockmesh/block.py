@@ -2,7 +2,7 @@
 """Provide interfaces for manipulating blocks."""
 
 import copy
-from typing import Collection
+from typing import Collection, Union
 
 import tetris.constants
 import tetris.io
@@ -98,8 +98,19 @@ class Block(BlockMeshElement):
 
     def set_edge(self, edge: Edge) -> None:
         """Define a new edge."""
-        ids = [self.vertices.index(edge.v0), self.vertices.index(edge.v1)]
-        self.edges[tetris.constants.BLOCK_EDGES.index(sorted(ids))] = edge
+        ids = (
+            self.vertices.index(edge.v0),
+            self.vertices.index(edge.v1),
+        )
+        ordered_ids = tuple({*ids})
+
+        # Are the vertices in the right order?
+        # (i.e., following the OpenFOAM convention)
+        right_order = ids == ordered_ids
+
+        self.edges[tetris.constants.BLOCK_EDGES.index(ordered_ids)] = (
+            edge if right_order else edge.invert()
+        )
 
     def face(self, label: str) -> tuple[Vertex, ...]:
         """List the vertices ids for the given face label.
@@ -119,23 +130,26 @@ class Block(BlockMeshElement):
             [self.vertices[id] for id in tetris.constants.FACE_MAPPING[label]]
         )
 
-    def get_edge_by_vertex(self, v0: Vertex, v1: Vertex) -> Edge:
-        """Get the Edge defined by the local vertices v0 and v1.
+    def edge(self, v0: Union[Vertex, int], v1: Union[Vertex, int]) -> Edge:
+        """Get the edge defined by vertices v0 and v1.
 
         Parameters
         ----------
-        v0 : Vertex
-            The local vertex instance.
-        v1 : Vertex
-            The local vertex instance.
+        v0 : Vertex, int
+            Either the vertex instance or the local vertex id.
+        v1 : Vertex, int
+            Either the vertex instance or the local vertex id.
 
         Returns
         -------
         Edge
             The edge defined by the two vertices.
         """
-        ids = [self.vertices.index(v0), self.vertices.index(v1)]
-        edge = self.edges[tetris.constants.BLOCK_EDGES.index(sorted(ids))]
+        id0 = v0 if isinstance(v0, int) else self.vertices.index(v0)
+        id1 = v1 if isinstance(v1, int) else self.vertices.index(v1)
+        ids = tuple({id0, id1})
+
+        edge = self.edges[tetris.constants.BLOCK_EDGES.index(ids)]
 
         return edge if edge.v0 == v0 else edge.invert()
 
