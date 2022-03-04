@@ -1,6 +1,8 @@
 # coding: utf-8
 """Provide interfaces for manipulating blocks."""
 
+from __future__ import annotations
+
 import copy
 from typing import Collection, Union
 
@@ -38,6 +40,15 @@ class Block(BlockMeshElement):
         self.cellZone: str = ""
 
         self.description: str = ""
+
+    @staticmethod
+    def from_vertices(vertices: Collection[Vertex]) -> Block:
+        """Create a block from a list of vertices."""
+        # Instantiate the class
+        cls = Block()
+        cls.set_vertices(vertices)
+
+        return cls
 
     @property
     def name(self) -> str:
