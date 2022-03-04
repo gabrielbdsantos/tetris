@@ -10,7 +10,7 @@ import numpy as np
 import tetris.io
 import tetris.utils
 from tetris.blockmesh.geometry import Geometry
-from tetris.typing import BlockMeshElement, Vector
+from tetris.typing import BlockMeshElement, NDArray, Vector, floating
 
 
 class Vertex(BlockMeshElement):
@@ -34,8 +34,8 @@ class Vertex(BlockMeshElement):
         """Get the vertex name."""
         return f"v{self.id}"
 
-    def move(self, vector: Union[Vector, int, float]) -> None:
-        """Move the vertex.
+    def translate_(self, vector: Union[Vector, int, float]) -> None:
+        """Translate the vertex.
 
         Parameters
         ----------
@@ -43,6 +43,55 @@ class Vertex(BlockMeshElement):
             The translation vector.
         """
         self.coords += tetris.utils.to_array(vector)
+
+    def translate(self, vector: Union[Vector, int, float]) -> Vertex:
+        """Translate the vertex.
+
+        Parameters
+        ----------
+        vector: int, float, vector
+            The translation vector.
+
+        Return
+        ------
+        Vertex
+            The translated vertex.
+        """
+        vertex = self + 0
+        vertex.translate_(vector)
+
+        return vertex
+
+    def rotate_(
+        self,
+        yaw: float = 0,
+        pitch: float = 0,
+        roll: float = 0,
+        origin: Union[Vertex, Vector] = np.zeros(3),
+        degrees: bool = True,
+    ) -> None:
+        """Rotate the vertex around a reference point.
+
+        Parameters
+        ----------
+        yaw: float
+            Rotation angle about the z axis.
+        pitch: float
+            Rotation angle about the y axis.
+        roll: float
+            Rotation angle about the x axis.
+        origin: np.ndarray
+            The point about which rotation is done.
+        degrees: bool
+            Interpret angles as in degrees rather than radians.
+        """
+        origin = np.asarray(
+            origin.coords if isinstance(origin, Vertex) else origin
+        )
+
+        self.coords = tetris.utils.rotate3D(
+            self.coords, yaw, pitch, roll, origin, degrees
+        )
 
     def rotate(
         self,
@@ -82,11 +131,73 @@ class Vertex(BlockMeshElement):
             )
         )
 
+    def move_(
+        self,
+        vector: Union[Vector, int, float],
+        angles: tuple[float, ...] = (0, 0, 0),
+        origin: NDArray[floating] = None,
+        degrees: bool = True,
+    ) -> None:
+        """Move the vertex.
+
+        Parameters
+        ----------
+        vector: int, float, vector
+            The translation vector.
+        angles: vector
+            The rotation angles: yaw, pitch, and roll.
+        degrees: bool
+            Interpret angles as in degrees rather than radians.
+        """
+        yaw, pitch, roll = angles
+
+        # Make a hard copy of the current position.
+        origin = (self.coords if origin is None else origin) + 0.0
+
+        # Translate the current instance.
+        self.translate_(vector)
+
+        # Rotate about the local origin.
+        self.rotate_(yaw, pitch, roll, origin, degrees)
+
+    def move(
+        self,
+        vector: Union[Vector, int, float],
+        angles: tuple[float, ...] = (0, 0, 0),
+        origin: NDArray[floating] = None,
+        degrees: bool = True,
+    ) -> Vertex:
+        """Move the vertex.
+
+        Parameters
+        ----------
+        vector: int, float, vector
+            The translation vector.
+        angles: vector
+            The rotation angles: yaw, pitch, and roll.
+        degrees: bool
+            Interpret angles as in degrees rather than radians.
+
+        Return
+        ------
+        Vertex
+            The new vertex.
+        """
+        yaw, pitch, roll = angles
+
+        # Make a hard copy of the current position.
+        origin = (self.coords if origin is None else origin) + 0.0
+
+        return self.translate(vector).rotate(yaw, pitch, roll, origin, degrees)
+
     def write(self) -> str:
         """Write the coordinates in OpenFOAM style."""
         v = self.coords
 
         return f"name {self.name} ({v[0]:.6f} {v[1]:.6f} {v[2]:.6f})"
+
+    def __repr__(self) -> str:
+        return f"Vertex{tetris.io.tetris2foam(self.coords)}"
 
     # Make the class subscriptable.
     def __getitem__(self, index: int) -> float:
